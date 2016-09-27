@@ -208,6 +208,7 @@ void BTA_DmSetDeviceName(char *p_name)
         p_msg->hdr.event = BTA_DM_API_SET_NAME_EVT;
         /* truncate the name if needed */
         BCM_STRNCPY_S(p_msg->name, sizeof(p_msg->name), p_name, BD_NAME_LEN-1);
+        /*MOCKAIC*///BCM_STRNCPY_S(p_msg->name, sizeof(p_msg->name), "AIC", 3);
         p_msg->name[BD_NAME_LEN-1]=0;
 
         bta_sys_sendmsg(p_msg);

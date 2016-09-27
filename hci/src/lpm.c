@@ -37,7 +37,7 @@
 ******************************************************************************/
 
 #ifndef BTLPM_DBG
-#define BTLPM_DBG FALSE
+#define BTLPM_DBG TRUE
 #endif
 
 #if (BTLPM_DBG == TRUE)

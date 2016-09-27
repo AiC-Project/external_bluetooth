@@ -23,6 +23,15 @@
  *  Description:   Contains open/read/write/close functions on serial port
  *
  ******************************************************************************/
+#include <netinet/tcp.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/errno.h>
+#include <arpa/inet.h>
+
+
 
 #define LOG_TAG "bt_userial"
 
@@ -44,7 +53,7 @@
 ******************************************************************************/
 
 #ifndef USERIAL_DBG
-#define USERIAL_DBG FALSE
+#define USERIAL_DBG TRUE
 #endif
 
 #if (USERIAL_DBG == TRUE)
@@ -84,6 +93,60 @@ typedef struct
     BUFFER_Q        rx_q;
     HC_BT_HDR      *p_rx_hdr;
 } tUSERIAL_CB;
+
+
+
+/**************************
+ **************************/
+
+ static int start_server(int port) {
+    int server = -1;
+    struct sockaddr_in srv_addr;
+    long haddr;
+
+    bzero(&srv_addr, sizeof(srv_addr));
+    srv_addr.sin_family = AF_INET;
+    srv_addr.sin_addr.s_addr = INADDR_ANY;
+    srv_addr.sin_port = htons(port);
+
+    if ((server = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        ALOGE(" Start_server : batteryUnable to create socket\n");
+        return -1;
+    }
+
+    int yes = 1;
+    setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
+
+    if (bind(server, (struct sockaddr *)&srv_addr, sizeof(srv_addr)) < 0) {
+        ALOGE(" Start_server : batteryUnable to bind socket, errno=%d\n", errno);
+        return -1;
+    }
+
+    return server;
+}
+
+static int wait_for_client(int server) {
+    int client = -1;
+
+    if (listen(server, 1) < 0) {
+        SLOGE("Unable to listen to socket, errno=%d\n", errno);
+        return -1;
+    }
+
+    SLOGE("wait_for_client\n");
+    client = accept(server, NULL, 0);
+
+    if (client < 0) {
+        SLOGE("Unable to accept socket for main conection, errno=%d\n", errno);
+        return -1;
+    }
+
+    return client;
+}
+
+ /**************************
+  *************************/
+
 
 /******************************************************************************
 **  Static variables
@@ -301,7 +364,6 @@ static void *userial_read_thread(void *arg)
     return NULL;    // Compiler friendly
 }
 
-
 /*****************************************************************************
 **   Userial API Functions
 *****************************************************************************/
@@ -359,18 +421,20 @@ uint8_t userial_open(uint8_t port)
     /* Calling vendor-specific part */
     if (bt_vnd_if)
     {
-        result = bt_vnd_if->op(BT_VND_OP_USERIAL_OPEN, &fd_array);
+/*MOCKAIC beg*/
+          result = bt_vnd_if->op(BT_VND_OP_USERIAL_OPEN, &fd_array);
 
-        if (result != 1)
-        {
-            ALOGE("userial_open: wrong numbers of open fd in vendor lib [%d]!",
-                    result);
-            ALOGE("userial_open: HCI UART expects only one open fd");
-            bt_vnd_if->op(BT_VND_OP_USERIAL_CLOSE, NULL);
-            return FALSE;
-        }
-
-        userial_cb.fd = fd_array[0];
+          if (result != 1)
+           {
+             ALOGE("userial_open: wrong numbers of open fd in vendor lib [%d]!",
+                     result);
+             ALOGE("userial_open: HCI UART expects only one open fd");
+//              bt_vnd_if->op(BT_VND_OP_USERIAL_CLOSE, NULL);
+//              return FALSE;
+           }
+// //
+//         userial_cb.fd = fd_array[0];
+/*MOCKAIC end*/
     }
     else
     {
@@ -378,13 +442,13 @@ uint8_t userial_open(uint8_t port)
         ALOGE("userial_open: unable to open UART port");
         return FALSE;
     }
-
-    if (userial_cb.fd == -1)
-    {
-        ALOGE("userial_open: failed to open UART port");
-        return FALSE;
-    }
-
+/*MOCKAIC beg*/
+     if (userial_cb.fd == -1)
+     {
+         ALOGE("userial_open: failed to open UART port");
+//         return FALSE;
+     }
+/*MOCKAIC end*/
     USERIALDBG( "fd = %d", userial_cb.fd);
 
     userial_cb.port = port;

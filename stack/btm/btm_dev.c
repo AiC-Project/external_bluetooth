@@ -64,14 +64,17 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
     int               i, j;
     BOOLEAN           found = FALSE;
 
+    BTM_TRACE_EVENT0 ("BTM_SecAddDevice() Gooooo");
+
     p_dev_rec = btm_find_dev (bd_addr);
     if (!p_dev_rec)
     {
+        BTM_TRACE_EVENT0 (" A - BTM_SecAddDevice() Gooooo");
         /* There is no device record, allocate one.
          * If we can not find an empty spot for this one, let it fail. */
         for (i = 0; i < BTM_SEC_MAX_DEVICE_RECORDS; i++)
         {
-            if (!(btm_cb.sec_dev_rec[i].sec_flags & BTM_SEC_IN_USE))
+            /*MOCKAIC*///if (!(btm_cb.sec_dev_rec[i].sec_flags & BTM_SEC_IN_USE))
             {
                 p_dev_rec = &btm_cb.sec_dev_rec[i];
 
@@ -90,8 +93,8 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
             }
         }
 
-        if (!p_dev_rec)
-            return(FALSE);
+        //if (!p_dev_rec)
+            /*MOCKAIC*///return(FALSE);
     }
 
     p_dev_rec->timestamp = btm_cb.dev_rec_count++;
@@ -134,11 +137,12 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
 
     BTM_SEC_COPY_TRUSTED_DEVICE(trusted_mask, p_dev_rec->trusted_mask);
 
+    BTM_TRACE_EVENT6 ("BTM_SecAddDevice()  BDA: %02x:%02x:%02x:%02x:%02x:%02x",
+                    bd_addr[0], bd_addr[1], bd_addr[2],
+                    bd_addr[3], bd_addr[4], bd_addr[5]);
+
     if (link_key)
     {
-        BTM_TRACE_EVENT6 ("BTM_SecAddDevice()  BDA: %02x:%02x:%02x:%02x:%02x:%02x",
-                          bd_addr[0], bd_addr[1], bd_addr[2],
-                          bd_addr[3], bd_addr[4], bd_addr[5]);
         p_dev_rec->sec_flags |= BTM_SEC_LINK_KEY_KNOWN;
         memcpy (p_dev_rec->link_key, link_key, LINK_KEY_LEN);
         p_dev_rec->link_key_type = key_type;

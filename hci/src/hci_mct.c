@@ -40,11 +40,11 @@
 ******************************************************************************/
 
 #ifndef HCI_DBG
-#define HCI_DBG FALSE
+#define HCI_DBG TRUE
 #endif
 
 #if (HCI_DBG == TRUE)
-#define HCIDBG(param, ...) {LOGD(param, ## __VA_ARGS__);}
+#define HCIDBG(param, ...) {ALOGD(param, ## __VA_ARGS__);}
 #else
 #define HCIDBG(param, ...) {}
 #endif
@@ -732,6 +732,7 @@ uint16_t hci_mct_receive_evt_msg(void)
     while (continue_fetch_looping)
     {
         /* Read one byte to see if there is anything waiting to be read */
+        ALOGE( " A Read one byte to see if there is anything waiting to be read" );
         if (userial_read(MSG_HC_TO_STACK_HCI_EVT, &byte, 1) == 0)
         {
             break;
@@ -743,6 +744,7 @@ uint16_t hci_mct_receive_evt_msg(void)
         switch (p_cb->rcv_state)
         {
         case MCT_RX_NEWMSG_ST:
+            ALOGE( " B Start of new message %d", byte);
             /* Start of new message */
             /* Initialize rx parameters */
             memset(p_cb->preload_buffer, 0 , 6);
@@ -754,6 +756,7 @@ uint16_t hci_mct_receive_evt_msg(void)
             break;
 
         case MCT_RX_LEN_ST:
+            ALOGE( " C Receiving preamble = %d", byte );
             /* Receiving preamble */
             p_cb->preload_buffer[p_cb->preload_count++] = byte;
             p_cb->rcv_len--;
@@ -761,6 +764,7 @@ uint16_t hci_mct_receive_evt_msg(void)
             /* Check if we received entire preamble yet */
             if (p_cb->rcv_len == 0)
             {
+                ALOGE( " D Received entire preamble %d", byte );
                 /* Received entire preamble.
                  * Length is in the last received byte */
                 msg_len = byte;
@@ -769,6 +773,7 @@ uint16_t hci_mct_receive_evt_msg(void)
                 /* Allocate a buffer for message */
                 if (bt_hc_cbacks)
                 {
+                    ALOGE( " E Allocate a buffer for message" );
                     len = msg_len + p_cb->preload_count + BT_HC_HDR_SIZE;
                     p_cb->p_rcv_msg = \
                         (HC_BT_HDR *) bt_hc_cbacks->alloc(len);
@@ -776,6 +781,7 @@ uint16_t hci_mct_receive_evt_msg(void)
 
                 if (p_cb->p_rcv_msg)
                 {
+                    ALOGE( " F Initialize buffer with preloaded data" );
                     /* Initialize buffer with preloaded data */
                     p_cb->p_rcv_msg->offset = 0;
                     p_cb->p_rcv_msg->layer_specific = 0;
@@ -788,7 +794,7 @@ uint16_t hci_mct_receive_evt_msg(void)
                 {
                     /* Unable to acquire message buffer. */
                     ALOGE( \
-                     "Unable to acquire buffer for incoming HCI message." \
+                     " G Unable to acquire buffer for incoming HCI message." \
                     );
 
                     if (msg_len == 0)
@@ -809,11 +815,13 @@ uint16_t hci_mct_receive_evt_msg(void)
                 /* Message length is valid */
                 if (msg_len)
                 {
+                    ALOGE( " H Read rest of message , %d", msg_len);
                     /* Read rest of message */
                     p_cb->rcv_state = MCT_RX_DATA_ST;
                 }
                 else
                 {
+                    ALOGE( " I Message has no additional parameters");
                     /* Message has no additional parameters.
                      * (Entire message has been received) */
                     msg_received = TRUE;
@@ -826,11 +834,15 @@ uint16_t hci_mct_receive_evt_msg(void)
             break;
 
         case MCT_RX_DATA_ST:
+
+             ALOGE( " J MCT_RX_DATA_ST %d", p_cb->rcv_len);
+
             *((uint8_t *)(p_cb->p_rcv_msg + 1) + p_cb->p_rcv_msg->len++) = byte;
             p_cb->rcv_len--;
 
             if (p_cb->rcv_len > 0)
             {
+                ALOGE( " K Read in the rest of the message");
                 /* Read in the rest of the message */
                 len = userial_read(MSG_HC_TO_STACK_HCI_EVT, \
                       ((uint8_t *)(p_cb->p_rcv_msg+1) + p_cb->p_rcv_msg->len), \
@@ -843,6 +855,7 @@ uint16_t hci_mct_receive_evt_msg(void)
             /* Check if we read in entire message yet */
             if (p_cb->rcv_len == 0)
             {
+                ALOGE( " K Received entire packet");
                 /* Received entire packet. */
                 msg_received = TRUE;
                 /* Next, wait for next message */
@@ -859,6 +872,7 @@ uint16_t hci_mct_receive_evt_msg(void)
             /* Check if we read in entire message yet */
             if (p_cb->rcv_len == 0)
             {
+                ALOGE( " L Next, wait for next message");
                 /* Next, wait for next message */
                 p_cb->rcv_state = MCT_RX_NEWMSG_ST;
                 continue_fetch_looping = FALSE;
@@ -866,6 +880,8 @@ uint16_t hci_mct_receive_evt_msg(void)
             break;
         }
 
+
+        ALOGE( " M If we received entire message, then send it to the task");
 
         /* If we received entire message, then send it to the task */
         if (msg_received)
@@ -875,7 +891,193 @@ uint16_t hci_mct_receive_evt_msg(void)
             /* generate snoop trace message */
             btsnoop_capture(p_cb->p_rcv_msg, TRUE);
 
-            intercepted = internal_event_intercept();
+            /*MOCKAIC*///intercepted = internal_event_intercept();
+
+            if ((bt_hc_cbacks) && (intercepted == FALSE))
+            {
+                bt_hc_cbacks->data_ind((TRANSAC) p_cb->p_rcv_msg, \
+                                       (char *) (p_cb->p_rcv_msg + 1), \
+                                       p_cb->p_rcv_msg->len + BT_HC_HDR_SIZE);
+            }
+            p_cb->p_rcv_msg = NULL;
+        }
+    }
+
+    return (bytes_read);
+}
+
+uint16_t hci_mct_receive_evt_msg_aic(uint16_t HCI_TYP_EVT)
+{
+    uint16_t    bytes_read = 0;
+    uint8_t     byte;
+    uint16_t    msg_len, len;
+    uint8_t     msg_received;
+    tHCI_RCV_CB  *p_cb=&mct_cb.rcv_evt;
+    uint8_t     continue_fetch_looping = TRUE;
+
+    while (continue_fetch_looping)
+    {
+        /* Read one byte to see if there is anything waiting to be read */
+        ALOGE( " A Read one byte to see if there is anything waiting to be read" );
+        if (userial_read(MSG_HC_TO_BTIF_HCI_EVT, &byte, 1) == 0)
+        {
+            break;
+        }
+
+        bytes_read++;
+        msg_received = FALSE;
+
+        switch (p_cb->rcv_state)
+        {
+        case MCT_RX_NEWMSG_ST:
+            ALOGE( " B Start of new message %d", byte);
+            /* Start of new message */
+            /* Initialize rx parameters */
+            memset(p_cb->preload_buffer, 0 , 6);
+            p_cb->preload_buffer[0] = byte;
+            p_cb->preload_count = 1;
+            p_cb->rcv_len = HCI_EVT_PREAMBLE_SIZE - 1;
+            // p_cb->p_rcv_msg = NULL;
+            p_cb->rcv_state = MCT_RX_LEN_ST; /* Next, wait for length to come */
+            break;
+
+        case MCT_RX_LEN_ST:
+            ALOGE( " C Receiving preamble = %d", byte );
+            /* Receiving preamble */
+            p_cb->preload_buffer[p_cb->preload_count++] = byte;
+            p_cb->rcv_len--;
+
+            /* Check if we received entire preamble yet */
+            if (p_cb->rcv_len == 0)
+            {
+                ALOGE( " D Received entire preamble %d", byte );
+                /* Received entire preamble.
+                 * Length is in the last received byte */
+                msg_len = byte;
+                p_cb->rcv_len = msg_len;
+
+                /* Allocate a buffer for message */
+                if (bt_hc_cbacks)
+                {
+                    ALOGE( " E Allocate a buffer for message" );
+                    len = msg_len + p_cb->preload_count + BT_HC_HDR_SIZE;
+                    p_cb->p_rcv_msg = \
+                        (HC_BT_HDR *) bt_hc_cbacks->alloc(len);
+                }
+
+                if (p_cb->p_rcv_msg)
+                {
+                    ALOGE( " F Initialize buffer with preloaded data" );
+                    /* Initialize buffer with preloaded data */
+                    p_cb->p_rcv_msg->offset = 0;
+                    p_cb->p_rcv_msg->layer_specific = 0;
+                    p_cb->p_rcv_msg->event = MSG_HC_TO_BTIF_HCI_EVT;
+                    p_cb->p_rcv_msg->len = p_cb->preload_count;
+                    memcpy((uint8_t *)(p_cb->p_rcv_msg + 1), \
+                           p_cb->preload_buffer, p_cb->preload_count);
+                }
+                else
+                {
+                    /* Unable to acquire message buffer. */
+                    ALOGE( \
+                     " G Unable to acquire buffer for incoming HCI message." \
+                    );
+
+                    if (msg_len == 0)
+                    {
+                        /* Wait for next message */
+                        p_cb->rcv_state = MCT_RX_NEWMSG_ST;
+                        continue_fetch_looping = FALSE;
+                    }
+                    else
+                    {
+                        /* Ignore rest of the packet */
+                        p_cb->rcv_state = MCT_RX_IGNORE_ST;
+                    }
+
+                    break;
+                }
+
+                /* Message length is valid */
+                if (msg_len)
+                {
+                    ALOGE( " H Read rest of message , %d", msg_len);
+                    /* Read rest of message */
+                    p_cb->rcv_state = MCT_RX_DATA_ST;
+                }
+                else
+                {
+                    ALOGE( " I Message has no additional parameters");
+                    /* Message has no additional parameters.
+                     * (Entire message has been received) */
+                    msg_received = TRUE;
+
+                    /* Next, wait for next message */
+                    p_cb->rcv_state = MCT_RX_NEWMSG_ST;
+                    continue_fetch_looping = FALSE;
+                }
+            }
+            break;
+
+        case MCT_RX_DATA_ST:
+
+             ALOGE( " J MCT_RX_DATA_ST %d", p_cb->rcv_len);
+
+            *((uint8_t *)(p_cb->p_rcv_msg + 1) + p_cb->p_rcv_msg->len++) = byte;
+            p_cb->rcv_len--;
+
+            if (p_cb->rcv_len > 0)
+            {
+                ALOGE( " K Read in the rest of the message");
+                /* Read in the rest of the message */
+                len = userial_read(MSG_HC_TO_BTIF_HCI_EVT, \
+                      ((uint8_t *)(p_cb->p_rcv_msg+1) + p_cb->p_rcv_msg->len), \
+                      p_cb->rcv_len);
+                p_cb->p_rcv_msg->len += len;
+                p_cb->rcv_len -= len;
+                bytes_read += len;
+            }
+
+            /* Check if we read in entire message yet */
+            if (p_cb->rcv_len == 0)
+            {
+                ALOGE( " K Received entire packet");
+                /* Received entire packet. */
+                msg_received = TRUE;
+                /* Next, wait for next message */
+                p_cb->rcv_state = MCT_RX_NEWMSG_ST;
+                continue_fetch_looping = FALSE;
+            }
+            break;
+
+
+        case MCT_RX_IGNORE_ST:
+            /* Ignore reset of packet */
+            p_cb->rcv_len--;
+
+            /* Check if we read in entire message yet */
+            if (p_cb->rcv_len == 0)
+            {
+                ALOGE( " L Next, wait for next message");
+                /* Next, wait for next message */
+                p_cb->rcv_state = MCT_RX_NEWMSG_ST;
+                continue_fetch_looping = FALSE;
+            }
+            break;
+        }
+
+
+        ALOGE( " M If we received entire message, then send it to the task");
+
+        /* If we received entire message, then send it to the task */
+        if (msg_received)
+        {
+            uint8_t intercepted = FALSE;
+
+            /* generate snoop trace message */
+            btsnoop_capture(p_cb->p_rcv_msg, TRUE);
+
+            /*MOCKAIC*///intercepted = internal_event_intercept();
 
             if ((bt_hc_cbacks) && (intercepted == FALSE))
             {
@@ -914,7 +1116,9 @@ uint16_t hci_mct_receive_acl_msg(void)
         /* Read one byte to see if there is anything waiting to be read */
         if (userial_read(MSG_HC_TO_STACK_HCI_ACL, &byte, 1) == 0)
         {
-            break;
+             ALOGE( " AA Read one byte to see if there is anything waiting to be read");
+            //byte =3;
+             //break;
         }
 
         bytes_read++;
@@ -924,6 +1128,7 @@ uint16_t hci_mct_receive_acl_msg(void)
         {
         case MCT_RX_NEWMSG_ST:
             /* Start of new message */
+            ALOGE( " BB Start of new message");
             /* Initialize rx parameters */
             memset(p_cb->preload_buffer, 0 , 6);
             p_cb->preload_buffer[0] = byte;
@@ -989,7 +1194,7 @@ uint16_t hci_mct_receive_acl_msg(void)
                         p_cb->rcv_state = MCT_RX_IGNORE_ST;
                     }
 
-                    break;
+                    //break;
                 }
 
                 /* Message length is valid */

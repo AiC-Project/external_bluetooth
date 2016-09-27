@@ -249,7 +249,7 @@ static int prop2cfg(bt_bdaddr_t *remote_bd_addr, bt_property_t *prop)
     bdstr_t bdstr = {0};
     if(remote_bd_addr)
         bd2str(remote_bd_addr, &bdstr);
-    BTIF_TRACE_DEBUG3("in, bd addr:%s, prop type:%d, len:%d", bdstr, prop->type, prop->len);
+    BTIF_TRACE_ERROR3(" prop2cfg - in, bd addr:%s, prop type:%d, len:%d", bdstr, prop->type, prop->len);
     char value[1024];
     if(prop->len <= 0 || prop->len > (int)sizeof(value) - 1)
     {
@@ -341,7 +341,7 @@ static int cfg2prop(bt_bdaddr_t *remote_bd_addr, bt_property_t *prop)
     bdstr_t bdstr = {0};
     if(remote_bd_addr)
         bd2str(remote_bd_addr, &bdstr);
-    BTIF_TRACE_DEBUG3("in, bd addr:%s, prop type:%d, len:%d", bdstr, prop->type, prop->len);
+    BTIF_TRACE_ERROR3("cfg2prop -- in, bd addr:%s, prop type:%d, len:%d", bdstr, prop->type, prop->len);
     if(prop->len <= 0)
     {
         BTIF_TRACE_ERROR2("property type:%d, len:%d is invalid", prop->type, prop->len);
@@ -465,36 +465,41 @@ static int cfg2prop(bt_bdaddr_t *remote_bd_addr, bt_property_t *prop)
 *******************************************************************************/
 static bt_status_t btif_in_fetch_bonded_devices(btif_bonded_devices_t *p_bonded_devices, int add)
 {
-    BTIF_TRACE_DEBUG1("in add:%d", add);
+    BTIF_TRACE_ERROR1("in add:%d", add);
     memset(p_bonded_devices, 0, sizeof(btif_bonded_devices_t));
 
     char kname[128], vname[128];
     short kpos;
     int kname_size;
     kname_size = sizeof(kname);
-    kname[0] = 0;
+    //kname[0] = 0;
     kpos = 0;
     BOOLEAN bt_linkkey_file_found=FALSE;
     int device_type;
-
+    /*MOCKAIC*/
+    //strcpy(kname,"0F:0F:0F:0F:0F:0F");
     do
     {
         kpos = btif_config_next_key(kpos, "Remote", kname, &kname_size);
-        BTIF_TRACE_DEBUG2("Remote device:%s, size:%d", kname, kname_size);
+        BTIF_TRACE_ERROR2("Remote device:%s, size:%d", kname, kname_size);
         int type = BTIF_CFG_TYPE_BIN;
         LINK_KEY link_key;
         int size = sizeof(link_key);
         if(btif_config_get("Remote", kname, "LinkKey", (char*)link_key, &size, &type))
         {
+            BTIF_TRACE_ERROR0("A - Remote device GOOOOO");
             int linkkey_type;
-            if(btif_config_get_int("Remote", kname, "LinkKeyType", &linkkey_type))
+           if(btif_config_get_int("Remote", kname, "LinkKeyType", &linkkey_type))
             {
+                BTIF_TRACE_ERROR0("B - Remote device GOOOOO");
                 //int pin_len;
                 //btif_config_get_int("Remote", kname, "PinLength", &pin_len))
                 bt_bdaddr_t bd_addr;
                 str2bd(kname, &bd_addr);
                 if(add)
                 {
+                    BTIF_TRACE_ERROR0("C - Remote device GOOOOO");
+
                     DEV_CLASS dev_class = {0, 0, 0};
                     int cod;
                     if(btif_config_get_int("Remote", kname, "DevClass", &cod))
@@ -512,28 +517,28 @@ static bt_status_t btif_in_fetch_bonded_devices(btif_bonded_devices_t *p_bonded_
                 bt_linkkey_file_found = TRUE;
                 memcpy(&p_bonded_devices->devices[p_bonded_devices->num_devices++], &bd_addr, sizeof(bt_bdaddr_t));
             }
-            else
-            {
-#if (BLE_INCLUDED == TRUE)
-                bt_linkkey_file_found = FALSE;
-#else
-                BTIF_TRACE_ERROR1("bounded device:%s, LinkKeyType or PinLength is invalid", kname);
-#endif
-            }
+//             else
+//             {
+// #if (BLE_INCLUDED == TRUE)
+//                 bt_linkkey_file_found = FALSE;
+// #else
+//                 BTIF_TRACE_ERROR1("bounded device:%s, LinkKeyType or PinLength is invalid", kname);
+// #endif
+//             }
         }
 #if (BLE_INCLUDED == TRUE)
             if(!(btif_in_fetch_bonded_ble_device(kname,add, p_bonded_devices)) && (!bt_linkkey_file_found))
             {
-                BTIF_TRACE_DEBUG1("Remote device:%s, no link key or ble key found", kname);
+                BTIF_TRACE_ERROR1("Remote device:%s, no link key or ble key found", kname);
             }
 #else
             if(!bt_linkkey_file_found)
-                BTIF_TRACE_DEBUG1("Remote device:%s, no link key", kname);
+                BTIF_TRACE_ERROR1("Remote device:%s, no link key", kname);
 #endif
         kname_size = sizeof(kname);
         kname[0] = 0;
     } while(kpos != -1);
-    BTIF_TRACE_DEBUG0("out");
+    BTIF_TRACE_ERROR0("out");
     return BT_STATUS_SUCCESS;
 }
 
@@ -605,7 +610,7 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t *property)
 
         btif_in_fetch_bonded_devices(&bonded_devices, 0);
 
-        BTIF_TRACE_DEBUG2("%s: Number of bonded devices: %d Property:BT_PROPERTY_ADAPTER_BONDED_DEVICES", __FUNCTION__, bonded_devices.num_devices);
+        BTIF_TRACE_ERROR2("%s: Number of bonded devices: %d Property:BT_PROPERTY_ADAPTER_BONDED_DEVICES", __FUNCTION__, bonded_devices.num_devices);
 
         if (bonded_devices.num_devices > 0)
         {
@@ -801,7 +806,7 @@ bt_status_t btif_storage_remove_bonded_device(bt_bdaddr_t *remote_bd_addr)
 {
     bdstr_t bdstr;
     bd2str(remote_bd_addr, &bdstr);
-    BTIF_TRACE_DEBUG1("in bd addr:%s", bdstr);
+    BTIF_TRACE_ERROR1("in bd addr:%s", bdstr);
     int ret = btif_config_remove("Remote", bdstr, "LinkKeyType");
     ret &= btif_config_remove("Remote", bdstr, "PinLength");
     ret &= btif_config_remove("Remote", bdstr, "LinkKey");
@@ -1041,7 +1046,7 @@ bt_status_t btif_storage_remove_ble_bonding_keys(bt_bdaddr_t *remote_bd_addr)
 {
     bdstr_t bdstr;
     bd2str(remote_bd_addr, &bdstr);
-    BTIF_TRACE_DEBUG2(" %s in bd addr:%s",__FUNCTION__, bdstr);
+    BTIF_TRACE_ERROR2(" %s in bd addr:%s",__FUNCTION__, bdstr);
     int ret = 1;
     if(btif_config_exist("Remote", bdstr, "LE_KEY_PENC"))
         ret &= btif_config_remove("Remote", bdstr, "LE_KEY_PENC");
@@ -1172,7 +1177,7 @@ bt_status_t btif_in_fetch_bonded_ble_device(char *remote_bd_addr,int add, btif_b
         return BT_STATUS_FAIL;
     if(device_type == BT_DEVICE_TYPE_BLE)
     {
-            BTIF_TRACE_DEBUG2("%s %s found a BLE device", __FUNCTION__,remote_bd_addr);
+            BTIF_TRACE_ERROR2("%s %s found a BLE device", __FUNCTION__,remote_bd_addr);
             str2bd(remote_bd_addr, &bd_addr);
             bdcpy(bta_bd_addr, bd_addr.address);
             if (btif_storage_get_remote_addr_type(&bd_addr, &addr_type) != BT_STATUS_SUCCESS)
@@ -1196,15 +1201,15 @@ bt_status_t btif_in_fetch_bonded_ble_device(char *remote_bd_addr,int add, btif_b
                     p = (tBTA_LE_KEY_VALUE *)buf;
                     for (i=0; i<16; i++)
                     {
-                        BTIF_TRACE_DEBUG2("penc_key.ltk[%d]=0x%02x",i,p->penc_key.ltk[i]);
+                        BTIF_TRACE_ERROR2("penc_key.ltk[%d]=0x%02x",i,p->penc_key.ltk[i]);
                     }
                     for (i=0; i<8; i++)
                     {
-                        BTIF_TRACE_DEBUG2("penc_key.rand[%d]=0x%02x",i,p->penc_key.rand[i]);
+                        BTIF_TRACE_ERROR2("penc_key.rand[%d]=0x%02x",i,p->penc_key.rand[i]);
                     }
-                    BTIF_TRACE_DEBUG1("p->penc_key.ediv=0x%04x",p->penc_key.ediv);
-                    BTIF_TRACE_DEBUG1("p->penc_key.sec_level=0x%02x",p->penc_key.sec_level);
-                    BTIF_TRACE_DEBUG1("p->penc_key.key_size=0x%02x",p->penc_key.key_size);
+                    BTIF_TRACE_ERROR1("p->penc_key.ediv=0x%04x",p->penc_key.ediv);
+                    BTIF_TRACE_ERROR1("p->penc_key.sec_level=0x%02x",p->penc_key.sec_level);
+                    BTIF_TRACE_ERROR1("p->penc_key.key_size=0x%02x",p->penc_key.key_size);
                     BTA_DmAddBleKey (bta_bd_addr, (tBTA_LE_KEY_VALUE *)buf, BTIF_DM_LE_KEY_PENC);
                 }
             }
@@ -1225,7 +1230,7 @@ bt_status_t btif_in_fetch_bonded_ble_device(char *remote_bd_addr,int add, btif_b
                     p = (tBTA_LE_KEY_VALUE *)buf;
                     for (i=0; i<16; i++)
                     {
-                        BTIF_TRACE_DEBUG2("p->pid_key[%d]=0x%02x",i,p->pid_key.irk[i]);
+                        BTIF_TRACE_ERROR2("p->pid_key[%d]=0x%02x",i,p->pid_key.irk[i]);
                     }
 
                     BTA_DmAddBleKey (bta_bd_addr, (tBTA_LE_KEY_VALUE *)buf, BTIF_DM_LE_KEY_PID);
@@ -1249,10 +1254,10 @@ bt_status_t btif_in_fetch_bonded_ble_device(char *remote_bd_addr,int add, btif_b
                     p = (tBTA_LE_KEY_VALUE *)buf;
                     for (i=0; i<16; i++)
                     {
-                        BTIF_TRACE_DEBUG2("p->pcsrk_key.csrk[%d]=0x%02x",i, p->psrk_key.csrk[i]);
+                        BTIF_TRACE_ERROR2("p->pcsrk_key.csrk[%d]=0x%02x",i, p->psrk_key.csrk[i]);
                     }
-                    BTIF_TRACE_DEBUG1("p->pcsrk_key.counter=0x%08x",p->psrk_key.counter);
-                    BTIF_TRACE_DEBUG1("p->pcsrk_key.sec_level=0x%02x",p->psrk_key.sec_level);
+                    BTIF_TRACE_ERROR1("p->pcsrk_key.counter=0x%08x",p->psrk_key.counter);
+                    BTIF_TRACE_ERROR1("p->pcsrk_key.sec_level=0x%02x",p->psrk_key.sec_level);
 
                     BTA_DmAddBleKey (bta_bd_addr, (tBTA_LE_KEY_VALUE *)buf, BTIF_DM_LE_KEY_PCSRK);
                 }
@@ -1272,9 +1277,9 @@ bt_status_t btif_in_fetch_bonded_ble_device(char *remote_bd_addr,int add, btif_b
                         is_device_added = TRUE;
                     }
                     p = (tBTA_LE_KEY_VALUE *)buf;
-                    BTIF_TRACE_DEBUG1("p->lenc_key.div=0x%04x",p->lenc_key.div);
-                    BTIF_TRACE_DEBUG1("p->lenc_key.key_size=0x%02x",p->lenc_key.key_size);
-                    BTIF_TRACE_DEBUG1("p->lenc_key.sec_level=0x%02x",p->lenc_key.sec_level);
+                    BTIF_TRACE_ERROR1("p->lenc_key.div=0x%04x",p->lenc_key.div);
+                    BTIF_TRACE_ERROR1("p->lenc_key.key_size=0x%02x",p->lenc_key.key_size);
+                    BTIF_TRACE_ERROR1("p->lenc_key.sec_level=0x%02x",p->lenc_key.sec_level);
 
                     BTA_DmAddBleKey (bta_bd_addr, (tBTA_LE_KEY_VALUE *)buf, BTIF_DM_LE_KEY_LENC);
                 }
@@ -1294,9 +1299,9 @@ bt_status_t btif_in_fetch_bonded_ble_device(char *remote_bd_addr,int add, btif_b
                         is_device_added = TRUE;
                     }
                     p = (tBTA_LE_KEY_VALUE *)buf;
-                    BTIF_TRACE_DEBUG1("p->lcsrk_key.div=0x%04x",p->lcsrk_key.div);
-                    BTIF_TRACE_DEBUG1("p->lcsrk_key.counter=0x%08x",p->lcsrk_key.counter);
-                    BTIF_TRACE_DEBUG1("p->lcsrk_key.sec_level=0x%02x",p->lcsrk_key.sec_level);
+                    BTIF_TRACE_ERROR1("p->lcsrk_key.div=0x%04x",p->lcsrk_key.div);
+                    BTIF_TRACE_ERROR1("p->lcsrk_key.counter=0x%08x",p->lcsrk_key.counter);
+                    BTIF_TRACE_ERROR1("p->lcsrk_key.sec_level=0x%02x",p->lcsrk_key.sec_level);
 
                     BTA_DmAddBleKey (bta_bd_addr, (tBTA_LE_KEY_VALUE *)buf, BTIF_DM_LE_KEY_LCSRK);
                 }
@@ -1361,7 +1366,7 @@ bt_status_t btif_storage_add_hid_device_info(bt_bdaddr_t *remote_bd_addr,
                                                     UINT8 ctry_code, UINT16 dl_len, UINT8 *dsc_list)
 {
     bdstr_t bdstr;
-    BTIF_TRACE_DEBUG0("btif_storage_add_hid_device_info:");
+    BTIF_TRACE_ERROR0("btif_storage_add_hid_device_info:");
     bd2str(remote_bd_addr, &bdstr);
     btif_config_set_int("Remote", bdstr, "HidAttrMask", attr_mask);
     btif_config_set_int("Remote", bdstr, "HidSubClass", sub_class);
@@ -1406,7 +1411,7 @@ bt_status_t btif_storage_load_bonded_hid_info(void)
     do
     {
         kpos = btif_config_next_key(kpos, "Remote", kname, &kname_size);
-        BTIF_TRACE_DEBUG2("Remote device:%s, size:%d", kname, kname_size);
+        BTIF_TRACE_ERROR2("Remote device:%s, size:%d", kname, kname_size);
         int value;
         if(btif_config_get_int("Remote", kname, "HidAttrMask", &value))
         {
@@ -1528,7 +1533,7 @@ bt_status_t btif_storage_read_hl_apps_cb(char *value, int value_size)
 
     }
 
-    BTIF_TRACE_DEBUG3("%s  status=%d value_size=%d", __FUNCTION__, bt_status, value_size);
+    BTIF_TRACE_ERROR3("%s  status=%d value_size=%d", __FUNCTION__, bt_status, value_size);
     return bt_status;
 }
 

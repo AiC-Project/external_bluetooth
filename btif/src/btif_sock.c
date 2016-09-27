@@ -71,12 +71,12 @@ bt_status_t btif_sock_init()
     {
         //fix me, the process doesn't exit right now. don't set the init flag for now
         //binit = 1;
-        BTIF_TRACE_DEBUG0("btsock initializing...");
+        BTIF_TRACE_ERROR0("btsock initializing...");
         btsock_thread_init();
         int handle = btsock_thread_create(btsock_signaled, NULL);
         if(handle >= 0 && btsock_rfc_init(handle) == BT_STATUS_SUCCESS)
         {
-            BTIF_TRACE_DEBUG0("btsock successfully initialized");
+            BTIF_TRACE_ERROR0("btsock successfully initialized");
             return BT_STATUS_SUCCESS;
         }
     }
@@ -86,12 +86,14 @@ bt_status_t btif_sock_init()
 void btif_sock_cleanup()
 {
     btsock_rfc_cleanup();
-    BTIF_TRACE_DEBUG0("leaving");
+    BTIF_TRACE_ERROR0("leaving");
 }
 
 static bt_status_t btsock_listen(btsock_type_t type, const char* service_name,
         const uint8_t* service_uuid, int channel, int* sock_fd, int flags)
 {
+    BTIF_TRACE_ERROR3("btsock_listen, uuid:%p, channel:%d, sock_fd:%p", service_uuid, channel, sock_fd);
+
     if((service_uuid == NULL && channel <= 0) || sock_fd == NULL)
     {
         BTIF_TRACE_ERROR3("invalid parameters, uuid:%p, channel:%d, sock_fd:%p", service_uuid, channel, sock_fd);
@@ -117,11 +119,16 @@ static bt_status_t btsock_listen(btsock_type_t type, const char* service_name,
             status = BT_STATUS_UNSUPPORTED;
             break;
     }
+    /*MOCKAIC*///status=BT_STATUS_SUCCESS;
     return status;
 }
 static bt_status_t btsock_connect(const bt_bdaddr_t *bd_addr, btsock_type_t type,
         const uint8_t* uuid, int channel, int* sock_fd, int flags)
 {
+
+    BTIF_TRACE_ERROR4("btsock_connect, bd_addr:%p, uuid:%p, channel:%d, sock_fd:%p",
+                bd_addr, uuid, channel, sock_fd);
+
     if((uuid == NULL && channel <= 0) || bd_addr == NULL || sock_fd == NULL)
     {
         BTIF_TRACE_ERROR4("invalid parameters, bd_addr:%p, uuid:%p, channel:%d, sock_fd:%p",
@@ -148,6 +155,7 @@ static bt_status_t btsock_connect(const bt_bdaddr_t *bd_addr, btsock_type_t type
             status = BT_STATUS_UNSUPPORTED;
             break;
     }
+    /*MOCKAIC*/status=BT_STATUS_SUCCESS;
     return status;
 }
 static void btsock_signaled(int fd, int type, int flags, uint32_t user_id)

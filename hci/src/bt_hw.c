@@ -65,11 +65,12 @@ bt_vendor_interface_t *bt_vnd_if=NULL;
 ******************************************************************************/
 static void fwcfg_cb(bt_vendor_op_result_t result)
 {
-    bt_hc_postload_result_t status = (result == BT_VND_OP_RESULT_SUCCESS) ? \
+    bt_hc_postload_result_t status = BT_HC_PRELOAD_SUCCESS;
+    /*MOCKAIC*///= (result == BT_VND_OP_RESULT_SUCCESS) ? \
                                      BT_HC_PRELOAD_SUCCESS : BT_HC_PRELOAD_FAIL;
 
     fwcfg_acked = TRUE;
-
+        ALOGE("!!! fwcfg_cb !!!");
     if (bt_hc_cbacks)
         bt_hc_cbacks->preload_cb(NULL, status);
 }

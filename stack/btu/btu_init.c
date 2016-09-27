@@ -68,13 +68,13 @@ void btu_init_core(void)
 
     sdp_init();
 
-#if BLE_INCLUDED == TRUE
+//#if BLE_INCLUDED == TRUE
     gatt_init();
-#if (defined(SMP_INCLUDED) && SMP_INCLUDED == TRUE)
+//#if (defined(SMP_INCLUDED) && SMP_INCLUDED == TRUE)
     SMP_Init();
-#endif
+//#endif
     btm_ble_init();
-#endif
+//#endif
 }
 
 

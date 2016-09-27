@@ -4804,6 +4804,8 @@ extern UINT8 btif_trace_level;
 
 /* Simplified Trace Helper Macro
 */
+#define BT_USE_TRACES TRUE
+
 #if (BT_USE_TRACES == TRUE)
 #define bdld(fmt, ...) \
     do{\

@@ -56,6 +56,8 @@
 #include "bt_hci_bdroid.h"
 #include "utils.h"
 
+#define BTSNOOP_DBG TRUE
+
 #ifndef BTSNOOP_DBG
 #define BTSNOOP_DBG FALSE
 #endif
@@ -686,6 +688,10 @@ void btsnoop_capture(HC_BT_HDR *p_buf, uint8_t is_rcvd)
         case MSG_STACK_TO_HC_HCI_CMD:
             SNOOPDBG("TYPE : CMD");
             btsnoop_hci_cmd(p);
+            break;
+        case MSG_HC_TO_BTIF_HCI_EVT:
+            SNOOPDBG("TYPE : AICBTIF");
+            btsnoop_hci_evt(p);
             break;
     }
 #endif // BTSNOOPDISP_INCLUDED

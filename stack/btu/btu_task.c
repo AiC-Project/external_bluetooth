@@ -171,28 +171,30 @@ BTU_API UINT32 btu_task (UINT32 param)
     /* wait an event that HCISU is ready */
     BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API,
                 "btu_task pending for preload complete event");
-
-    for (;;)
-    {
-        event = GKI_wait (0xFFFF, 0);
-        if (event & EVENT_MASK(GKI_SHUTDOWN_EVT))
-        {
-            /* indicates BT ENABLE abort */
-            BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_WARNING,
-                        "btu_task start abort!");
-            return (0);
-        }
-        else if (event & BT_EVT_PRELOAD_CMPL)
-        {
-            break;
-        }
-        else
-        {
-            BT_TRACE_1(TRACE_LAYER_BTU, TRACE_TYPE_WARNING,
-                "btu_task ignore evt %04x while pending for preload complete",
-                event);
-        }
-    }
+/*MOCKAIC beg */
+//     for (;;)
+//     {
+//         event = GKI_wait (0xFFFF, 0);
+//         if (event & EVENT_MASK(GKI_SHUTDOWN_EVT))
+//         {
+//             /* indicates BT ENABLE abort */
+//             BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_WARNING,
+//                         "btu_task start abort!");
+//             /*MOCKAIC*///return (0);
+//         }
+//         else if (event & BT_EVT_PRELOAD_CMPL)
+//         {
+//             break;
+//         }
+//         else
+//         {
+//             BT_TRACE_1(TRACE_LAYER_BTU, TRACE_TYPE_WARNING,
+//                 "btu_task ignore evt %04x while pending for preload complete",
+//                 event);
+//             /*MOCKAIC*///break;
+//         }
+//     }
+/*MOCKAIC end*/
 
     BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API,
                 "btu_task received preload complete event");
@@ -204,9 +206,13 @@ BTU_API UINT32 btu_task (UINT32 param)
     btu_init_core();
 
     /* Initialize any optional stack components */
+        BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API,
+                "Initialize any optional stack components");
     BTE_InitStack();
 
 #if (defined(BTU_BTA_INCLUDED) && BTU_BTA_INCLUDED == TRUE)
+            BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API,
+                "bta_sys_init");
     bta_sys_init();
 #endif
 
@@ -218,7 +224,33 @@ BTU_API UINT32 btu_task (UINT32 param)
 #endif
 
     /* Send a startup evt message to BTIF_TASK to kickstart the init procedure */
-    GKI_send_event(BTIF_TASK, BT_EVT_TRIGGER_STACK_INIT);
+    BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API,
+                "Send a startup evt message to BTIF_TASK to kickstart the init procedure");
+   GKI_send_event(BTIF_TASK, BT_EVT_TRIGGER_STACK_INIT);
+
+int rr = 0;
+                        BT_HDR *myp_msg;
+                        BT_HDR *my2p_msg;
+                        UINT8     byte ;
+                        char bdname[512] ;
+
+// //     GKI_wait (0xFFFF, 0);
+// /*MOCKAIC BEG*/
+//     void *myp;
+//         if ((myp = (BT_HDR *) GKI_getbuf(sizeof(BT_HDR))) != NULL){
+//     BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API,
+//                 "Send a startup evt message to BTIF_TASK to kickstart the init procedure");
+//     ((BT_HDR *)myp)->event = BT_EVT_CONTEXT_SWITCH_EVT;
+// //     myp->hdr;
+// //     myp->p_cb;    /* context switch callback */
+// //
+// //     /* parameters passed to callback */
+// //     UINT16               event;   /* message event id */
+// //     char                 p_param[0]; /* parameter area needs to be last */
+// //
+//      GKI_send_msg(BTIF_TASK, TASK_MBOX_1_EVT_MASK, myp);
+//     }
+// /*MOCKAIC END*/
 
     raise_priority_a2dp(TASK_HIGH_BTU);
 
@@ -232,12 +264,24 @@ BTU_API UINT32 btu_task (UINT32 param)
             /* Process all messages in the queue */
             while ((p_msg = (BT_HDR *) GKI_read_mbox (BTU_HCI_RCV_MBOX)) != NULL)
             {
+
+             BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API,
+                "Process all messages in the queue : GOT msg from userial GOOOOO !");
+
                 /* Determine the input message type. */
                 switch (p_msg->event & BT_EVT_MASK)
                 {
                     case BT_EVT_TO_BTU_HCI_ACL:
                         /* All Acl Data goes to L2CAP */
-                        l2c_rcv_acl_data (p_msg);
+             BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API,
+                                        "All Acl Data goes to L2CAP  : GOT msg from userial GOOOOO !");
+//                         if ((myp_msg = (BT_HDR *)GKI_getbuf(BT_HDR_SIZE)) != NULL)
+//                         {
+//                             myp_msg->event = BT_EVT_CONTEXT_SWITCH_EVT;
+//                             GKI_send_msg(BTIF_TASK, BT_EVT_AIC, myp_msg);
+//                         }
+
+             l2c_rcv_acl_data (p_msg);
                         break;
 
                     case BT_EVT_TO_BTU_L2C_SEG_XMIT:
@@ -250,8 +294,58 @@ BTU_API UINT32 btu_task (UINT32 param)
                         btm_route_sco_data (p_msg);
                         break;
 #endif
+/*MOCKAIC beg*/
+                     case BT_EVT_CONTEXT_AICSET_EVT:
+                         BT_TRACE_1(TRACE_LAYER_BTU, TRACE_TYPE_API, "post event to start timer in BTU task GOOOOO BT_EVT_CONTEXT_AICSET_EVT %x" , p_msg->event);
+//                          memcpy ( bdname , (UINT8 *)(p_msg+1) + p_msg->len ,  p_msg->len );
+//                          BT_TRACE_1(TRACE_LAYER_BTU, TRACE_TYPE_API, "BTU task GOOOOOT %x" , bdname);
 
+                         //btu_hcif_process_event (0, p_msg);
+
+                         p_msg->event = BT_EVT_CONTEXT_AICSET_EVT;
+                         GKI_send_msg(BTIF_TASK, BTU_BTIF_MBOX, p_msg);
+
+                        // post event to start timer in BTU task
+//                         if ((myp_msg = (BT_HDR *)GKI_getbuf(BT_HDR_SIZE)) != NULL)
+//                         {
+//                             BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API, "post event to start timer in BTU task GOOOOO BT_EVT_CONTEXT_AICSET_EVT");
+//                             myp_msg->event = BT_EVT_CONTEXT_AICSET_EVT;
+//
+//                             strcpy(bdname,"lol");
+//                             byte = strlen(bdname);
+//                             myp_msg->len = byte ;
+//                              //*((UINT8 *)(myp_msg + 1) + myp_msg->len++) = byte;
+//                             memcpy ( (UINT8 *)(myp_msg+1) + myp_msg->len , bdname , myp_msg->len );
+//                             //STREAM_TO_UINT8 (status, p);
+//                             GKI_send_msg(BTIF_TASK, BTU_BTIF_MBOX, myp_msg);
+//                         }
+
+//                         if ((my2p_msg = (BT_HDR *)GKI_getbuf(BT_HDR_SIZE)) != NULL)
+//                         {
+//                             BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API, "post event to start timer in BTU task GOOOOO BT_EVT_CONTEXT_AICGET_EVT");
+//                             my2p_msg->event = BT_EVT_CONTEXT_AICGET_EVT;
+//                             GKI_send_msg(BTIF_TASK, BTU_BTIF_MBOX, my2p_msg);
+//                         }
+
+                        //if (rr == 0){
+                          //GKI_send_event (BTIF_TASK, BT_EVT_AIC); rr = 0;
+                        //}else{
+
+                        //}
+/*MOCKAIC end*/
+                       //GKI_freebuf(p_msg);
+                       break;
                     case BT_EVT_TO_BTU_HCI_EVT:
+
+// /*MOCKAIC beg*/
+//                             /* Send a startup evt message to BTIF_TASK to kickstart the init procedure */
+//     BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API,
+//                 "Send a startup evt message to BTIF_TASK to kickstart the init procedure");
+//    GKI_send_event(BTIF_TASK, BT_EVT_TRIGGER_STACK_INIT);
+// /*MOCKAIC end*/
+
+                        /* post event to start timer in BTU task */
+                        BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API, "post event to start timer in BTU task GOOOOO");
                         btu_hcif_process_event ((UINT8)(p_msg->event & BT_SUB_EVT_MASK), p_msg);
                         GKI_freebuf(p_msg);
 

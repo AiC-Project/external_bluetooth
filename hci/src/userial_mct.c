@@ -24,6 +24,11 @@
  *
  ******************************************************************************/
 
+#include <netinet/tcp.h>
+#include <netinet/in.h>
+#include <sys/select.h>
+#include <arpa/inet.h>
+
 #define LOG_TAG "bt_userial_mct"
 
 #include <utils/Log.h>
@@ -56,6 +61,10 @@
 
 #define MAX_SERIAL_PORT (USERIAL_PORT_3 + 1)
 
+
+#define READ_LIMIT 1024
+#define UBTDPORT  33800
+
 enum {
     USERIAL_RX_EXIT,
     USERIAL_RX_FLOW_OFF,
@@ -69,6 +78,7 @@ enum {
 extern bt_vendor_interface_t *bt_vnd_if;
 uint16_t hci_mct_receive_evt_msg(void);
 uint16_t hci_mct_receive_acl_msg(void);
+
 
 
 /******************************************************************************
@@ -138,83 +148,176 @@ static inline int is_signaled(fd_set* set)
 ** Returns         void *
 **
 *******************************************************************************/
-static void *userial_read_thread(void *arg)
-{
-    fd_set input;
-    int n;
-    char reason = 0;
+// static void *userial_read_thread(void *arg)
+// {
+//     fd_set input;
+//     int n;
+//     char reason = 0;
+//
+//     USERIALDBG("Entering userial_read_thread()");
+//
+//     rx_flow_on = TRUE;
+//     userial_running = 1;
+//
+//     raise_priority_a2dp(TASK_HIGH_USERIAL_READ);
+//
+//     while (userial_running)
+//     {
+//         /* Initialize the input fd set */
+//         FD_ZERO(&input);
+//         if (rx_flow_on == TRUE)
+//         {
+//             FD_SET(userial_cb.fd[CH_EVT], &input);
+//             FD_SET(userial_cb.fd[CH_ACL_IN], &input);
+//         }
+//
+//         int fd_max = create_signal_fds(&input);
+//         fd_max = (fd_max>userial_cb.fd[CH_EVT]) ? fd_max : userial_cb.fd[CH_EVT];
+//         fd_max = (fd_max>userial_cb.fd[CH_ACL_IN]) ? fd_max : userial_cb.fd[CH_ACL_IN];
+//
+//         /* Do the select */
+//         n = 0;
+//         n = select(fd_max+1, &input, NULL, NULL, NULL);
+//         if(is_signaled(&input))
+//         {
+//             reason = reset_signal();
+//             if (reason == USERIAL_RX_EXIT)
+//             {
+//                 ALOGI("exiting userial_read_thread");
+//                 userial_running = 0;
+//                 break;
+//             }
+//             else if (reason == USERIAL_RX_FLOW_OFF)
+//             {
+//                 USERIALDBG("RX flow OFF");
+//                 rx_flow_on = FALSE;
+//             }
+//             else if (reason == USERIAL_RX_FLOW_ON)
+//             {
+//                 USERIALDBG("RX flow ON");
+//                 rx_flow_on = TRUE;
+//             }
+//         }
+//
+//         if (n > 0)
+//         {
+//             /* We might have input */
+//             if (FD_ISSET(userial_cb.fd[CH_EVT], &input))
+//             {
+//                 hci_mct_receive_evt_msg();
+//             }
+//
+//             if (FD_ISSET(userial_cb.fd[CH_ACL_IN], &input))
+//             {
+//                 hci_mct_receive_acl_msg();
+//             }
+//         }
+//         else if (n < 0)
+//             ALOGW( "select() Failed");
+//         else if (n == 0)
+//             ALOGW( "Got a select() TIMEOUT");
+//     } /* while */
+//
+//     userial_running = 0;
+//     USERIALDBG("Leaving userial_evt_read_thread()");
+//     pthread_exit(NULL);
+//
+//     return NULL;    // Compiler friendly
+// }
 
-    USERIALDBG("Entering userial_read_thread()");
 
-    rx_flow_on = TRUE;
-    userial_running = 1;
 
-    raise_priority_a2dp(TASK_HIGH_USERIAL_READ);
+ static int start_server(int port) {
+    int server = -1;
+    struct sockaddr_in srv_addr;
+    long haddr;
 
-    while (userial_running)
-    {
-        /* Initialize the input fd set */
-        FD_ZERO(&input);
-        if (rx_flow_on == TRUE)
-        {
-            FD_SET(userial_cb.fd[CH_EVT], &input);
-            FD_SET(userial_cb.fd[CH_ACL_IN], &input);
-        }
+    bzero(&srv_addr, sizeof(srv_addr));
+    srv_addr.sin_family = AF_INET;
+    srv_addr.sin_addr.s_addr = INADDR_ANY;
+    srv_addr.sin_port = htons(port);
 
-        int fd_max = create_signal_fds(&input);
-        fd_max = (fd_max>userial_cb.fd[CH_EVT]) ? fd_max : userial_cb.fd[CH_EVT];
-        fd_max = (fd_max>userial_cb.fd[CH_ACL_IN]) ? fd_max : userial_cb.fd[CH_ACL_IN];
+    if ((server = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        ALOGE(" Start_server : batteryUnable to create socket\n");
+        return -1;
+    }
 
-        /* Do the select */
-        n = 0;
-        n = select(fd_max+1, &input, NULL, NULL, NULL);
-        if(is_signaled(&input))
-        {
-            reason = reset_signal();
-            if (reason == USERIAL_RX_EXIT)
-            {
-                ALOGI("exiting userial_read_thread");
-                userial_running = 0;
-                break;
-            }
-            else if (reason == USERIAL_RX_FLOW_OFF)
-            {
-                USERIALDBG("RX flow OFF");
-                rx_flow_on = FALSE;
-            }
-            else if (reason == USERIAL_RX_FLOW_ON)
-            {
-                USERIALDBG("RX flow ON");
-                rx_flow_on = TRUE;
-            }
-        }
+    int yes = 1;
+    setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 
-        if (n > 0)
-        {
-            /* We might have input */
-            if (FD_ISSET(userial_cb.fd[CH_EVT], &input))
-            {
-                hci_mct_receive_evt_msg();
-            }
+    if (bind(server, (struct sockaddr *)&srv_addr, sizeof(srv_addr)) < 0) {
+        ALOGE(" Start_server : batteryUnable to bind socket, errno=%d\n", errno);
+        return -1;
+    }
 
-            if (FD_ISSET(userial_cb.fd[CH_ACL_IN], &input))
-            {
-                hci_mct_receive_acl_msg();
-            }
-        }
-        else if (n < 0)
-            ALOGW( "select() Failed");
-        else if (n == 0)
-            ALOGW( "Got a select() TIMEOUT");
-    } /* while */
-
-    userial_running = 0;
-    USERIALDBG("Leaving userial_evt_read_thread()");
-    pthread_exit(NULL);
-
-    return NULL;    // Compiler friendly
+    return server;
 }
 
+static int wait_for_client(int server) {
+    int client = -1;
+
+    if (listen(server, 1) < 0) {
+        SLOGE("Unable to listen to socket, errno=%d\n", errno);
+        return -1;
+    }
+
+    SLOGE("wait_for_client\n");
+    client = accept(server, NULL, 0);
+
+    if (client < 0) {
+        SLOGE("Unable to accept socket for main conection, errno=%d\n", errno);
+        return -1;
+    }
+
+    return client;
+}
+
+static void *userial_read_thread(void *arg)
+{
+    int rx_length;
+
+    int server = -1;
+    int client = -1;
+
+
+    USERIALDBG( "start userial_read_thread");
+    //_timeout = POLL_TIMEOUT;
+
+    if ((server = start_server(UBTDPORT)) == -1) {
+        USERIALDBG("userial_read_thread : start_server unable to create socket\n");
+        return NULL;
+    }
+
+   // Listen for main connection
+    while ((client = wait_for_client(server)) != -1)
+    {
+        //char current_packet[READ_LIMIT]
+        void *buf = (void *) malloc (READ_LIMIT * sizeof(unsigned char));
+
+        userial_cb.fd[0] = client ;
+        userial_cb.port=UBTDPORT;
+        if((rx_length = recv(client, buf, 1, MSG_PEEK))== -1)
+        {
+            USERIALDBG("userial_read_thread::  Error receiving data  !!! ");
+        }else{
+            USERIALDBG("userial_read_thread::  rx_length %d ", rx_length);
+            if (rx_length > 0){
+                if ( *((char *)(buf)) == -1 )
+                {
+                    hci_mct_receive_acl_msg();
+                }else if ( *((char *)(buf)) == -2 )
+                {
+                    hci_mct_receive_evt_msg();
+                }else{
+                    hci_mct_receive_evt_msg_aic(MSG_HC_TO_BTIF_HCI_EVT);
+                }
+            }
+        }
+    } /* end while */
+
+    pthread_exit(NULL);
+    return NULL;
+}
 
 /*****************************************************************************
 **   Userial API Functions
@@ -259,53 +362,53 @@ uint8_t userial_open(uint8_t port)
 
     USERIALDBG("userial_open(port:%d)", port);
 
-    if (userial_running)
-    {
-        /* Userial is open; close it first */
-        userial_close();
-        utils_delay(50);
-    }
-
-    if (port >= MAX_SERIAL_PORT)
-    {
-        ALOGE("Port > MAX_SERIAL_PORT");
-        return FALSE;
-    }
-
-    /* Calling vendor-specific part */
-    if (bt_vnd_if)
-    {
-        result = bt_vnd_if->op(BT_VND_OP_USERIAL_OPEN, &userial_cb.fd);
-
-        if ((result != 2) && (result != 4))
-        {
-            ALOGE("userial_open: wrong numbers of open fd in vendor lib [%d]!",
-                    result);
-            ALOGE("userial_open: HCI MCT expects 2 or 4 open file descriptors");
-            bt_vnd_if->op(BT_VND_OP_USERIAL_CLOSE, NULL);
-            return FALSE;
-        }
-    }
-    else
-    {
-        ALOGE("userial_open: missing vendor lib interface !!!");
-        ALOGE("userial_open: unable to open BT transport");
-        return FALSE;
-    }
-
-    ALOGI("CMD=%d, EVT=%d, ACL_Out=%d, ACL_In=%d", \
-        userial_cb.fd[CH_CMD], userial_cb.fd[CH_EVT], \
-        userial_cb.fd[CH_ACL_OUT], userial_cb.fd[CH_ACL_IN]);
-
-    if ((userial_cb.fd[CH_CMD] == -1) || (userial_cb.fd[CH_EVT] == -1) ||
-        (userial_cb.fd[CH_ACL_OUT] == -1) || (userial_cb.fd[CH_ACL_IN] == -1))
-    {
-        ALOGE("userial_open: failed to open BT transport");
-        bt_vnd_if->op(BT_VND_OP_USERIAL_CLOSE, NULL);
-        return FALSE;
-    }
-
-    userial_cb.port = port;
+//     if (userial_running)
+//     {
+//         /* Userial is open; close it first */
+//         userial_close();
+//         utils_delay(50);
+//     }
+//
+//     if (port >= MAX_SERIAL_PORT)
+//     {
+//         ALOGE("Port > MAX_SERIAL_PORT");
+//         return FALSE;
+//     }
+//
+//     /* Calling vendor-specific part */
+//     if (bt_vnd_if)
+//     {
+//         result = bt_vnd_if->op(BT_VND_OP_USERIAL_OPEN, &userial_cb.fd);
+//
+//         if ((result != 2) && (result != 4))
+//         {
+//             ALOGE("userial_open: wrong numbers of open fd in vendor lib [%d]!",
+//                     result);
+//             ALOGE("userial_open: HCI MCT expects 2 or 4 open file descriptors");
+//             bt_vnd_if->op(BT_VND_OP_USERIAL_CLOSE, NULL);
+//             return FALSE;
+//         }
+//     }
+//     else
+//     {
+//         ALOGE("userial_open: missing vendor lib interface !!!");
+//         ALOGE("userial_open: unable to open BT transport");
+//         return FALSE;
+//     }
+//
+//     ALOGI("CMD=%d, EVT=%d, ACL_Out=%d, ACL_In=%d", \
+//         userial_cb.fd[CH_CMD], userial_cb.fd[CH_EVT], \
+//         userial_cb.fd[CH_ACL_OUT], userial_cb.fd[CH_ACL_IN]);
+//
+//     if ((userial_cb.fd[CH_CMD] == -1) || (userial_cb.fd[CH_EVT] == -1) ||
+//         (userial_cb.fd[CH_ACL_OUT] == -1) || (userial_cb.fd[CH_ACL_IN] == -1))
+//     {
+//         ALOGE("userial_open: failed to open BT transport");
+//         bt_vnd_if->op(BT_VND_OP_USERIAL_CLOSE, NULL);
+//         return FALSE;
+//     }
+//
+//     userial_cb.port = port;
 
     /* Start listening thread */
     pthread_attr_init(&thread_attr);
@@ -345,10 +448,26 @@ uint8_t userial_open(uint8_t port)
 **                 copied into p_data.  This may be less than len.
 **
 *******************************************************************************/
+// uint16_t  userial_read(uint16_t msg_id, uint8_t *p_buffer, uint16_t len)
+// {
+//     int ret = -1;
+//     int ch_idx = (msg_id == MSG_HC_TO_STACK_HCI_EVT) ? CH_EVT : CH_ACL_IN;
+//
+//     ret = read(userial_cb.fd[ch_idx], p_buffer, (size_t)len);
+//     if (ret <= 0)
+//         ALOGW( "userial_read: read() returned %d!", ret);
+//
+//     return (uint16_t) ((ret >= 0) ? ret : 0);
+// }
+
 uint16_t  userial_read(uint16_t msg_id, uint8_t *p_buffer, uint16_t len)
 {
     int ret = -1;
-    int ch_idx = (msg_id == MSG_HC_TO_STACK_HCI_EVT) ? CH_EVT : CH_ACL_IN;
+    // int ch_idx = (msg_id == MSG_HC_TO_STACK_HCI_EVT) ? CH_EVT : CH_ACL_IN;
+    int ch_idx =0;
+
+    ALOGW( "userial_read: read() reading %d !", len);
+
 
     ret = read(userial_cb.fd[ch_idx], p_buffer, (size_t)len);
     if (ret <= 0)

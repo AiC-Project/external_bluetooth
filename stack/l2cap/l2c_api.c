@@ -238,11 +238,13 @@ UINT16 L2CA_ErtmConnectReq (UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_ERTM_INFO *p_e
                       (p_ertm_info) ? p_ertm_info->allowed_modes : 0, (p_ertm_info) ? p_ertm_info->preferred_mode : 0);
 
     /* Fail if we have not established communications with the controller */
-    if (!BTM_IsDeviceUp())
+    /*MOCKAIC beg*/
+    /*if (!BTM_IsDeviceUp())
     {
         L2CAP_TRACE_WARNING0 ("L2CAP connect req - BTU not ready");
         return (0);
-    }
+    }*/
+    /*MOCKAIC end*/
     /* Fail if the PSM is not registered */
     if ((p_rcb = l2cu_find_rcb_by_psm (psm)) == NULL)
     {

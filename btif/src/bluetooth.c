@@ -38,7 +38,7 @@
 #include <hardware/bt_gatt.h>
 #include <hardware/bt_rc.h>
 
-#define LOG_NDDEBUG 0
+#define LOG_NDDEBUG 1
 #define LOG_TAG "bluedroid"
 
 #include "btif_api.h"
@@ -47,6 +47,7 @@
 /************************************************************************************
 **  Constants & Macros
 ************************************************************************************/
+#define DEBUG() (ALOGI("%s", __FUNCTION__))
 
 #define is_profile(profile, str) ((strlen(str) == strlen(profile)) && strncmp((const char *)profile, str, strlen(str)) == 0)
 
@@ -93,9 +94,11 @@ extern btrc_interface_t *btif_rc_get_interface();
 
 static uint8_t interface_ready(void)
 {
-    /* add checks here that would prevent API calls other than init to be executed */
-    if (bt_hal_cbacks == NULL)
+    DEBUG();/* add checks here that would prevent API calls other than init to be executed */
+    if (bt_hal_cbacks == NULL){
+        ALOGI("%s bt_hal_cbacks == NULL", __FUNCTION__);
         return FALSE;
+    }
 
     return TRUE;
 }
@@ -109,20 +112,20 @@ static uint8_t interface_ready(void)
 
 static int init(bt_callbacks_t* callbacks )
 {
-    ALOGI("init");
-
-    /* sanity check */
+    ALOGI("%s - sanity check ", __FUNCTION__);                                  /* sanity check */
     if (interface_ready() == TRUE)
-        return BT_STATUS_DONE;
+        //return BT_STATUS_DONE;
 
-    /* store reference to user callbacks */
+    ALOGI("%s - store reference to user callbacks ", __FUNCTION__);             /* store reference to user callbacks */
     bt_hal_cbacks = callbacks;
 
-    /* add checks for individual callbacks ? */
+    if (bt_hal_cbacks == NULL)
+        ALOGI("%s bt_hal_cbacks == NULL POUET", __FUNCTION__);
 
+    ALOGI("%s - add checks for individual callbacks ? ", __FUNCTION__);         /* add checks for individual callbacks ? */
     bt_utils_init();
 
-    /* init btif */
+    ALOGI("%s - init btif ", __FUNCTION__);                                     /* init btif */
     btif_init_bluetooth();
 
     return BT_STATUS_SUCCESS;
@@ -130,10 +133,10 @@ static int init(bt_callbacks_t* callbacks )
 
 static int enable( void )
 {
-    ALOGI("enable");
+    DEBUG();
 
     /* sanity check */
-    if (interface_ready() == FALSE)
+if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
 
     return btif_enable_bluetooth();
@@ -141,6 +144,7 @@ static int enable( void )
 
 static int disable(void)
 {
+    DEBUG();
     /* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
@@ -150,7 +154,7 @@ static int disable(void)
 
 static void cleanup( void )
 {
-    /* sanity check */
+    DEBUG();/* sanity check */
     if (interface_ready() == FALSE)
         return;
 
@@ -163,7 +167,7 @@ static void cleanup( void )
 
 static int get_adapter_properties(void)
 {
-    /* sanity check */
+    DEBUG();/* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
 
@@ -172,7 +176,7 @@ static int get_adapter_properties(void)
 
 static int get_adapter_property(bt_property_type_t type)
 {
-    /* sanity check */
+    DEBUG();/* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
 
@@ -181,7 +185,7 @@ static int get_adapter_property(bt_property_type_t type)
 
 static int set_adapter_property(const bt_property_t *property)
 {
-    /* sanity check */
+    DEBUG();/* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
 
@@ -190,7 +194,7 @@ static int set_adapter_property(const bt_property_t *property)
 
 int get_remote_device_properties(bt_bdaddr_t *remote_addr)
 {
-    /* sanity check */
+    DEBUG();/* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
 
@@ -199,7 +203,7 @@ int get_remote_device_properties(bt_bdaddr_t *remote_addr)
 
 int get_remote_device_property(bt_bdaddr_t *remote_addr, bt_property_type_t type)
 {
-    /* sanity check */
+    DEBUG();/* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
 
@@ -208,7 +212,7 @@ int get_remote_device_property(bt_bdaddr_t *remote_addr, bt_property_type_t type
 
 int set_remote_device_property(bt_bdaddr_t *remote_addr, const bt_property_t *property)
 {
-    /* sanity check */
+    DEBUG();/* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
 
@@ -217,7 +221,7 @@ int set_remote_device_property(bt_bdaddr_t *remote_addr, const bt_property_t *pr
 
 int get_remote_service_record(bt_bdaddr_t *remote_addr, bt_uuid_t *uuid)
 {
-    /* sanity check */
+    DEBUG();/* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
 
@@ -226,7 +230,7 @@ int get_remote_service_record(bt_bdaddr_t *remote_addr, bt_uuid_t *uuid)
 
 int get_remote_services(bt_bdaddr_t *remote_addr)
 {
-    /* sanity check */
+    DEBUG();/* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
 
@@ -235,7 +239,7 @@ int get_remote_services(bt_bdaddr_t *remote_addr)
 
 static int start_discovery(void)
 {
-    /* sanity check */
+    DEBUG();/* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
 
@@ -244,7 +248,7 @@ static int start_discovery(void)
 
 static int cancel_discovery(void)
 {
-    /* sanity check */
+    DEBUG();/* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
 
@@ -253,7 +257,7 @@ static int cancel_discovery(void)
 
 static int create_bond(const bt_bdaddr_t *bd_addr)
 {
-    /* sanity check */
+    DEBUG();/* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
 
@@ -262,7 +266,7 @@ static int create_bond(const bt_bdaddr_t *bd_addr)
 
 static int cancel_bond(const bt_bdaddr_t *bd_addr)
 {
-    /* sanity check */
+    DEBUG();/* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
 
@@ -271,7 +275,7 @@ static int cancel_bond(const bt_bdaddr_t *bd_addr)
 
 static int remove_bond(const bt_bdaddr_t *bd_addr)
 {
-    /* sanity check */
+    DEBUG();/* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
 
@@ -281,7 +285,7 @@ static int remove_bond(const bt_bdaddr_t *bd_addr)
 static int pin_reply(const bt_bdaddr_t *bd_addr, uint8_t accept,
                  uint8_t pin_len, bt_pin_code_t *pin_code)
 {
-    /* sanity check */
+    DEBUG();/* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
 
@@ -291,7 +295,7 @@ static int pin_reply(const bt_bdaddr_t *bd_addr, uint8_t accept,
 static int ssp_reply(const bt_bdaddr_t *bd_addr, bt_ssp_variant_t variant,
                        uint8_t accept, uint32_t passkey)
 {
-    /* sanity check */
+    DEBUG();/* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
 
@@ -300,7 +304,7 @@ static int ssp_reply(const bt_bdaddr_t *bd_addr, bt_ssp_variant_t variant,
 
 static const void* get_profile_interface (const char *profile_id)
 {
-    ALOGI("get_profile_interface %s", profile_id);
+    DEBUG();ALOGI("get_profile_interface %s", profile_id);
 
     /* sanity check */
     if (interface_ready() == FALSE)
@@ -338,7 +342,7 @@ static const void* get_profile_interface (const char *profile_id)
 
 int dut_mode_configure(uint8_t enable)
 {
-    ALOGI("dut_mode_configure");
+    DEBUG();ALOGI("dut_mode_configure");
 
     /* sanity check */
     if (interface_ready() == FALSE)
@@ -349,7 +353,7 @@ int dut_mode_configure(uint8_t enable)
 
 int dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len)
 {
-    ALOGI("dut_mode_send");
+    DEBUG();ALOGI("dut_mode_send");
 
     /* sanity check */
     if (interface_ready() == FALSE)
@@ -361,7 +365,7 @@ int dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len)
 #if BLE_INCLUDED == TRUE
 int le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len)
 {
-    ALOGI("le_test_mode");
+    DEBUG();ALOGI("le_test_mode");
 
     /* sanity check */
     if (interface_ready() == FALSE)
@@ -373,7 +377,7 @@ int le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len)
 
 int config_hci_snoop_log(uint8_t enable)
 {
-    ALOGI("config_hci_snoop_log");
+    DEBUG();ALOGI("config_hci_snoop_log");
 
     /* sanity check */
     if (interface_ready() == FALSE)
@@ -382,7 +386,7 @@ int config_hci_snoop_log(uint8_t enable)
     return btif_config_hci_snoop_log(enable);
 }
 
-static const bt_interface_t bluetoothInterface = {
+const bt_interface_t bluetoothInterface = {
     sizeof(bluetoothInterface),
     init,
     enable,
@@ -416,21 +420,21 @@ static const bt_interface_t bluetoothInterface = {
 
 const bt_interface_t* bluetooth__get_bluetooth_interface ()
 {
-    /* fixme -- add property to disable bt interface ? */
+    DEBUG();/* fixme -- add property to disable bt interface ? */
 
     return &bluetoothInterface;
 }
 
 static int close_bluetooth_stack(struct hw_device_t* device)
 {
-    cleanup();
+    DEBUG();cleanup();
     return 0;
 }
 
 static int open_bluetooth_stack (const struct hw_module_t* module, char const* name,
 struct hw_device_t** abstraction)
 {
-    bluetooth_device_t *stack = malloc(sizeof(bluetooth_device_t) );
+    DEBUG();bluetooth_device_t *stack = malloc(sizeof(bluetooth_device_t) );
     memset(stack, 0, sizeof(bluetooth_device_t) );
     stack->common.tag = HARDWARE_DEVICE_TAG;
     stack->common.version = 0;

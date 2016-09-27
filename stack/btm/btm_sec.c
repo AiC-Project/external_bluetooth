@@ -1167,25 +1167,27 @@ tBTM_STATUS BTM_SecBond (BD_ADDR bd_addr, UINT8 pin_len, UINT8 *p_pin, UINT32 tr
         if ( btm_sec_check_prefetch_pin (p_dev_rec) )
 	        return(BTM_CMD_STARTED);
     }
-    if (BTM_SEC_MODE_SP == btm_cb.security_mode && BTM_SEC_IS_SM4_UNKNOWN(p_dev_rec->sm4))
-    {
-        /* local is 2.1 and peer is unknown */
-        if ((p_dev_rec->sm4 & BTM_SM4_CONN_PEND) == 0)
-        {
-            /* we are not accepting connection request from peer
-             * -> RNR (to learn if peer is 2.1)
-             * RNR when no ACL causes HCI_RMT_HOST_SUP_FEAT_NOTIFY_EVT */
-            btm_sec_change_pairing_state (BTM_PAIR_STATE_GET_REM_NAME);
-            BTM_ReadRemoteDeviceName(bd_addr, NULL);
-        }
-        else
-        {
-            /* We are accepting connection request from peer */
-            btm_sec_change_pairing_state (BTM_PAIR_STATE_WAIT_PIN_REQ);
-        }
-        BTM_TRACE_DEBUG3 ("State:%s sm4: 0x%x sec_state:%d", btm_pair_state_descr (btm_cb.pairing_state), p_dev_rec->sm4, p_dev_rec->sec_state);
-        return BTM_CMD_STARTED;
-    }
+/*MOCKAIC beg*/
+//     if (BTM_SEC_MODE_SP == btm_cb.security_mode && BTM_SEC_IS_SM4_UNKNOWN(p_dev_rec->sm4))
+//     {
+//         /* local is 2.1 and peer is unknown */
+//         if ((p_dev_rec->sm4 & BTM_SM4_CONN_PEND) == 0)
+//         {
+//             /* we are not accepting connection request from peer
+//              * -> RNR (to learn if peer is 2.1)
+//              * RNR when no ACL causes HCI_RMT_HOST_SUP_FEAT_NOTIFY_EVT */
+//             btm_sec_change_pairing_state (BTM_PAIR_STATE_GET_REM_NAME);
+//             BTM_ReadRemoteDeviceName(bd_addr, NULL);
+//         }
+//         else
+//         {
+//             /* We are accepting connection request from peer */
+//             btm_sec_change_pairing_state (BTM_PAIR_STATE_WAIT_PIN_REQ);
+//         }
+//         BTM_TRACE_DEBUG3 ("State:%s sm4: 0x%x sec_state:%d", btm_pair_state_descr (btm_cb.pairing_state), p_dev_rec->sm4, p_dev_rec->sec_state);
+//         return BTM_CMD_STARTED;
+//     }
+/*MOCKAIC end*/
 
     /* both local and peer are 2.1  */
     status = btm_sec_dd_create_conn(p_dev_rec);

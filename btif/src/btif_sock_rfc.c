@@ -130,6 +130,9 @@ static inline void free_gki_que(BUFFER_Q* q)
 static void init_rfc_slots()
 {
     int i;
+
+    APPL_TRACE_DEBUG2(" %s - %s", __FILE__, __FUNCTION__);
+
     memset(rfc_slots, 0, sizeof(rfc_slot_t)*MAX_RFC_CHANNEL);
     for(i = 0; i < MAX_RFC_CHANNEL; i++)
     {
@@ -143,6 +146,8 @@ static void init_rfc_slots()
 }
 bt_status_t btsock_rfc_init(int poll_thread_handle)
 {
+    APPL_TRACE_DEBUG2(" %s - %s", __FILE__, __FUNCTION__);
+
     pth = poll_thread_handle;
     init_rfc_slots();
     return BT_STATUS_SUCCESS;
@@ -164,6 +169,7 @@ void btsock_rfc_cleanup()
 static inline rfc_slot_t* find_free_slot()
 {
     int i;
+        APPL_TRACE_DEBUG2(" %s - %s", __FILE__, __FUNCTION__);
     for(i = 0; i < MAX_RFC_CHANNEL; i++)
     {
         if(rfc_slots[i].fd == -1)
@@ -244,6 +250,8 @@ static inline rfc_slot_t* find_rfc_slot_by_fd(int fd)
 }
 static rfc_slot_t* alloc_rfc_slot(const bt_bdaddr_t *addr, const char* name, const uint8_t* uuid, int channel, int flags, BOOLEAN server)
 {
+    APPL_TRACE_ERROR0("alloc_rfc_slot");
+
     int security = 0;
     if(flags & BTSOCK_FLAG_ENCRYPT)
         security |= server ? BTM_SEC_IN_ENCRYPT : BTM_SEC_OUT_ENCRYPT;
@@ -251,8 +259,10 @@ static rfc_slot_t* alloc_rfc_slot(const bt_bdaddr_t *addr, const char* name, con
         security |= server ? BTM_SEC_IN_AUTHENTICATE : BTM_SEC_OUT_AUTHENTICATE;
 
     rfc_slot_t* rs = find_free_slot();
+    APPL_TRACE_ERROR0("alloc_rfc_slot - find_free_slot");
     if(rs)
     {
+        APPL_TRACE_ERROR0("alloc_rfc_slot - if(rs)");
         int fds[2] = {-1, -1};
         if(socketpair(AF_LOCAL, SOCK_STREAM, 0, fds))
         {
@@ -294,7 +304,7 @@ static inline rfc_slot_t* create_srv_accept_rfc_slot(rfc_slot_t* srv_rs, const b
      //now update listen rfc_handle of server slot
     srv_rs->rfc_handle = new_listen_handle;
     srv_rs->rfc_port_handle = BTA_JvRfcommGetPortHdl(new_listen_handle);
-    BTIF_TRACE_DEBUG4("create_srv_accept__rfc_slot(open_handle: 0x%x, new_listen_handle:"
+    BTIF_TRACE_ERROR4("create_srv_accept__rfc_slot(open_handle: 0x%x, new_listen_handle:"
             "0x%x) accept_rs->rfc_handle:0x%x, srv_rs_listen->rfc_handle:0x%x"
       ,open_handle, new_listen_handle, accept_rs->rfc_port_handle, srv_rs->rfc_port_handle);
     asrt(accept_rs->rfc_port_handle != srv_rs->rfc_port_handle);
@@ -315,8 +325,11 @@ bt_status_t btsock_rfc_listen(const char* service_name, const uint8_t* service_u
         return BT_STATUS_PARM_INVALID;
     }
     *sock_fd = -1;
-    if(!is_init_done())
-        return BT_STATUS_NOT_READY;
+    /*MOCKAIC*/if(!is_init_done())
+        /*MOCKAIC*/APPL_TRACE_DEBUG1("is_init_done NOK :%s", service_name);
+
+    APPL_TRACE_DEBUG1("is_init_done OK :%s", service_name);
+
     if(is_uuid_empty(service_uuid))
         service_uuid = UUID_SPP; //use serial port profile to listen to specified channel
     else
@@ -341,6 +354,7 @@ bt_status_t btsock_rfc_listen(const char* service_name, const uint8_t* service_u
         btsock_thread_add_fd(pth, rs->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_EXCEPTION, rs->id);
     }
     unlock_slot(&slot_lock);
+    /*MOCKAIC*///status = BT_STATUS_SUCCESS;
     return status;
 }
 bt_status_t btsock_rfc_connect(const bt_bdaddr_t *bd_addr, const uint8_t* service_uuid,
@@ -686,17 +700,17 @@ static void *rfcomm_cback(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_data)
     {
     case BTA_JV_RFCOMM_START_EVT:
         on_srv_rfc_listen_started(&p_data->rfc_start, (uint32_t)user_data);
-        break;
+    //    break;
 
-    case BTA_JV_RFCOMM_CL_INIT_EVT:
+    //case BTA_JV_RFCOMM_CL_INIT_EVT:
         on_cl_rfc_init(&p_data->rfc_cl_init, (uint32_t)user_data);
-        break;
+    //    break;
 
-    case BTA_JV_RFCOMM_OPEN_EVT:
+    //case BTA_JV_RFCOMM_OPEN_EVT:
         BTA_JvSetPmProfile(p_data->rfc_open.handle,BTA_JV_PM_ID_1,BTA_JV_CONN_OPEN);
         on_cli_rfc_connect(&p_data->rfc_open, (uint32_t)user_data);
-        break;
-    case BTA_JV_RFCOMM_SRV_OPEN_EVT:
+    //    break;
+    //case BTA_JV_RFCOMM_SRV_OPEN_EVT:
         BTA_JvSetPmProfile(p_data->rfc_srv_open.handle,BTA_JV_PM_ALL,BTA_JV_CONN_OPEN);
         new_user_data = (void*)on_srv_rfc_connect(&p_data->rfc_srv_open, (uint32_t)user_data);
         break;

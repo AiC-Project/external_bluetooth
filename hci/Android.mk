@@ -9,9 +9,11 @@ LOCAL_SRC_FILES := \
         src/btsnoop.c \
         src/utils.c
 
+BLUETOOTH_HCI_USE_MCT = true
+
 ifeq ($(BLUETOOTH_HCI_USE_MCT),true)
 
-LOCAL_CFLAGS := -DHCI_USE_MCT
+LOCAL_CFLAGS += -DHCI_USE_MCT
 
 LOCAL_SRC_FILES += \
         src/hci_mct.c \

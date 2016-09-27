@@ -55,7 +55,7 @@ DEV_CLASS local_device_default_class = {0x40, 0x02, 0x0C};
 /******************************************************************************
 **  Local type definitions
 ******************************************************************************/
-#define CONF_DBG          0
+#define CONF_DBG          1
 #define info(format, ...) ALOGI (format, ## __VA_ARGS__)
 #define debug(format, ...) if (CONF_DBG) ALOGD (format, ## __VA_ARGS__)
 #define error(format, ...) ALOGE (format, ## __VA_ARGS__)

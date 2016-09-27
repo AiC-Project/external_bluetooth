@@ -42,7 +42,7 @@
 
 /* TRUE to enable DEBUG traces for btm_inq */
 #ifndef BTM_INQ_DEBUG
-#define BTM_INQ_DEBUG   FALSE
+#define BTM_INQ_DEBUG   TRUE
 #endif
 /********************************************************************************/
 /*                 L O C A L    D A T A    D E F I N I T I O N S                */
@@ -2684,6 +2684,20 @@ void btm_process_remote_name (BD_ADDR bda, BD_NAME bdn, UINT16 evt_len, UINT8 hc
     tBTM_INQ_INFO          *p_cur;
 #endif
 
+    /*MOCKAIC beg*/
+    BTM_TRACE_EVENT0("A btm_process_remote_name Goooo");
+    BD_ADDR bda1={0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+    memcpy(bda, bda1, 6);
+    BTM_TRACE_EVENT0("B btm_process_remote_name Goooo");
+    hci_status=HCI_SUCCESS;
+    evt_len = 4;
+    //char p_name[]="aic";
+    //memset(bdn, 0, (evt_len + 1));
+    BCM_STRNCPY_S( (char*)bdn, sizeof(BD_NAME), "aic", 3);
+
+    BTM_TRACE_EVENT0("C btm_process_remote_name Goooo");
+    /*MOCKAIC end*/
+
     if (bda != NULL)
     {
         BTM_TRACE_EVENT6("BDA %02x:%02x:%02x:%02x:%02x:%02x",bda[0], bda[1],
@@ -2691,7 +2705,7 @@ void btm_process_remote_name (BD_ADDR bda, BD_NAME bdn, UINT16 evt_len, UINT8 hc
                  bda[4], bda[5]);
     }
 
-	BTM_TRACE_EVENT6("Inquire BDA %02x:%02x:%02x:%02x:%02x:%02x",p_inq->remname_bda[0], p_inq->remname_bda[1],
+	BTM_TRACE_EVENT6(" Gooo Inquire BDA %02x:%02x:%02x:%02x:%02x:%02x",p_inq->remname_bda[0], p_inq->remname_bda[1],
              p_inq->remname_bda[2], p_inq->remname_bda[3],
              p_inq->remname_bda[4], p_inq->remname_bda[5]);
 

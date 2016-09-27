@@ -156,7 +156,7 @@ tBTM_STATUS BTM_BleObserve(BOOLEAN start, UINT8 duration,
     BTM_TRACE_EVENT1 ("BTM_BleObserve : scan_type:%d",btm_cb.btm_inq_vars.scan_type);
 
     if (!HCI_LE_HOST_SUPPORTED(btm_cb.devcb.local_lmp_features[HCI_EXT_FEATURES_PAGE_1]))
-        return BTM_ILLEGAL_VALUE;
+        /*MOCKAIC*///return BTM_ILLEGAL_VALUE;
 
     if (start)
     {
@@ -180,15 +180,17 @@ tBTM_STATUS BTM_BleObserve(BOOLEAN start, UINT8 duration,
         btm_cb.btm_inq_vars.p_inq_ble_cmpl_cb = p_cmpl_cb;
         p_inq->scan_type = (p_inq->scan_type == BTM_BLE_SCAN_MODE_NONE) ? BTM_BLE_SCAN_MODE_ACTI: p_inq->scan_type;
 
-        /* allow config scanning type */
-        if (btsnd_hcic_ble_set_scan_params (p_inq->scan_type,
-                                            (UINT16)(!p_inq->scan_interval ? BTM_BLE_GAP_DISC_SCAN_INT : p_inq->scan_interval),
-                                            (UINT16)(!p_inq->scan_window ? BTM_BLE_GAP_DISC_SCAN_WIN : p_inq->scan_window),
-                                            BLE_ADDR_PUBLIC,
-                                            BTM_BLE_DEFAULT_SFP)) /* assume observe always not using white list */
-        {
-            /* start scan, disable duplicate filtering */
-            if (btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_ENABLE, BTM_BLE_DUPLICATE_DISABLE))
+            BTM_TRACE_EVENT0 ("BTM_BleObserve allow config scanning type");
+            /*MOCKAIC beg*/
+//         /* allow config scanning type */
+//         if (btsnd_hcic_ble_set_scan_params (p_inq->scan_type,
+//                                             (UINT16)(!p_inq->scan_interval ? BTM_BLE_GAP_DISC_SCAN_INT : p_inq->scan_interval),
+//                                             (UINT16)(!p_inq->scan_window ? BTM_BLE_GAP_DISC_SCAN_WIN : p_inq->scan_window),
+//                                             BLE_ADDR_PUBLIC,
+//                                             BTM_BLE_DEFAULT_SFP)) /* assume observe always not using white list */
+//         {
+//             /* start scan, disable duplicate filtering */
+//             if (btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_ENABLE, BTM_BLE_DUPLICATE_DISABLE))
             {
                 status = BTM_SUCCESS;
                 p_inq->proc_mode = BTM_BLE_OBSERVE;
@@ -200,10 +202,12 @@ tBTM_STATUS BTM_BleObserve(BOOLEAN start, UINT8 duration,
                     btu_start_timer (&p_inq->inq_timer_ent, BTU_TTYPE_BLE_INQUIRY, duration);
                 }
             }
-        }
+//         }
+            /*MOCKAIC end*/
     }
     else/*start = 0*/
     {
+        BTM_TRACE_EVENT0 ("BTM_BleObserve start = 0");
         if(btm_cb.btm_inq_vars.scan_type == INQ_GENERAL)
         {
             //Dont stop the scan. Just nullify the cbs

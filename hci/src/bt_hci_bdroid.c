@@ -37,6 +37,8 @@
 #include "bt_utils.h"
 #include <sys/prctl.h>
 
+#define BTHC_DBG TRUE
+
 #ifndef BTHC_DBG
 #define BTHC_DBG FALSE
 #endif
@@ -183,7 +185,7 @@ static int init(const bt_hc_callbacks_t* p_cb, unsigned char *local_bdaddr)
     struct sched_param param;
     int policy, result;
 
-    ALOGI("init");
+    ALOGI("BLUETOOTH HOST/CONTROLLER INTERFACE LIBRARY FUNCTIONS init");
 
     if (p_cb == NULL)
     {
@@ -200,13 +202,13 @@ static int init(const bt_hc_callbacks_t* p_cb, unsigned char *local_bdaddr)
     init_vnd_if(local_bdaddr);
 
     utils_init();
-#ifdef HCI_USE_MCT
+//#ifdef HCI_USE_MCT
     extern tHCI_IF hci_mct_func_table;
     p_hci_if = &hci_mct_func_table;
-#else
-    extern tHCI_IF hci_h4_func_table;
-    p_hci_if = &hci_h4_func_table;
-#endif
+// #else
+//     extern tHCI_IF hci_h4_func_table;
+//     p_hci_if = &hci_h4_func_table;
+//#endif
 
     p_hci_if->init();
 
@@ -273,22 +275,26 @@ static void set_power(bt_hc_chip_power_state_t state)
 static int lpm(bt_hc_low_power_event_t event)
 {
     uint8_t status = TRUE;
-
+    BTHCDBG("lpm");
     switch (event)
     {
         case BT_HC_LPM_DISABLE:
+                BTHCDBG("lpm BT_HC_LPM_DISABLE");
             bthc_signal_event(HC_EVENT_LPM_DISABLE);
             break;
 
         case BT_HC_LPM_ENABLE:
+                BTHCDBG("lpm BT_HC_LPM_ENABLE");
             bthc_signal_event(HC_EVENT_LPM_ENABLE);
             break;
 
         case BT_HC_LPM_WAKE_ASSERT:
+                BTHCDBG("lpm BT_HC_LPM_WAKE_ASSERT");
             bthc_signal_event(HC_EVENT_LPM_WAKE_DEVICE);
             break;
 
         case BT_HC_LPM_WAKE_DEASSERT:
+                BTHCDBG("lpm BT_HC_LPM_WAKE_DEASSERT");
             bthc_signal_event(HC_EVENT_LPM_ALLOW_SLEEP);
             break;
     }
@@ -316,6 +322,8 @@ static void postload(TRANSAC transac)
 /** Transmit frame */
 static int transmit_buf(TRANSAC transac, char *p_buf, int len)
 {
+        BTHCDBG("transmit_buf");
+
     utils_enqueue(&tx_q, (void *) transac);
 
     bthc_signal_event(HC_EVENT_TX);
@@ -464,6 +472,8 @@ static void *bt_hc_worker_thread(void *arg)
             userial_open(USERIAL_PORT_1);
 
             /* Calling vendor-specific part */
+                ALOGI("bt_hc_worker_thread Calling vendor-specific part");
+
             if (bt_vnd_if)
             {
                 bt_vnd_if->op(BT_VND_OP_FW_CFG, NULL);
@@ -481,6 +491,8 @@ static void *bt_hc_worker_thread(void *arg)
              * is required. Then, follow with reading requests of getting
              * ACL data length for both BR/EDR and LE.
              */
+
+                            ALOGI("bt_hc_worker_thread Start from SCO related H/W configuratio");
             int result = -1;
 
             /* Calling vendor-specific part */

@@ -216,6 +216,7 @@ int btif_config_get(const char* section, const char* key, const char* name, char
         }
         unlock_slot(&slot_lock);
     }
+    /*MOCKAIC*///ret = TRUE;
     return ret;
 }
 int btif_config_set(const char* section, const char* key, const char* name, const char*  value, int bytes, int type)
@@ -395,7 +396,7 @@ static inline short find_inode(const cfg_node* p, const char* name)
     {
         int i;
         int count = GET_CHILD_COUNT(p);
-        //bdld("parent name:%s, child name:%s, child count:%d", p->name, name, count);
+        bdld("parent name:%s, child name:%s, child count:%d", p->name, name, count);
         for(i = 0; i < count; i++)
         {
             if(p->child[i].name && *p->child[i].name &&
@@ -781,7 +782,7 @@ static void load_cfg()
 }
 static void cfg_cmd_callback(int cmd_fd, int type, int size, uint32_t user_id)
 {
-  //bdld("cmd type:%d, size:%d", type, size);
+    bdld("cmd type:%d, size:%d", type, size);
     switch(type)
     {
         case CFG_CMD_SAVE:
@@ -899,15 +900,15 @@ static void cfg_test_read()
         size = sizeof(link_key);
         type = BTIF_CFG_TYPE_BIN;
         ret = btif_config_get(section, key, "link keys", link_key, &size, &type);
+
+        int timeout;    }
+
+        ret = btif_config_get_int(section, key, "connect time out", &timeout);
+        //debug("btif_config_get_int return:%d, Remote devices:%s, connect time out:%d", ret, key, timeout);
         //debug("btif_config_get return:%d, Remote devices:%s, link key:%x, %x",
         //            ret, key, *(int *)link_key, *((int *)link_key + 1));
 
-        int timeout;
-        ret = btif_config_get_int(section, key, "connect time out", &timeout);
-        //debug("btif_config_get_int return:%d, Remote devices:%s, connect time out:%d", ret, key, timeout);
-    }
-
-    // debug("testing btif_config_remove");
+        // debug("testing btif_config_remove");
     size = sizeof(class);
     type = BTIF_CFG_TYPE_STR;
     btif_config_set("Remote", "00:22:5F:97:56:04", "Class Delete", class, strlen(class) + 1, BTIF_CFG_TYPE_STR);

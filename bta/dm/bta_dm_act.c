@@ -268,14 +268,14 @@ void bta_dm_enable(tBTA_DM_MSG *p_data)
     tBTA_DM_SEC sec_event;
 
     /* if already in use, return an error */
-    if( bta_dm_cb.is_bta_dm_active == TRUE  )
+    /*MOCKAIC*///if( bta_dm_cb.is_bta_dm_active == TRUE  )
     {
         APPL_TRACE_WARNING0("bta_dm_enable - device already started by another application");
         memset(&sec_event.enable, 0, sizeof ( tBTA_DM_ENABLE ));
         sec_event.enable.status = BTA_FAILURE;
         if( p_data->enable.p_sec_cback != NULL  )
             p_data->enable.p_sec_cback (BTA_DM_ENABLE_EVT, &sec_event);
-        return;
+            /*MOCKAIC*///return;
     }
 
     /* first, register our callback to SYS HW manager */
@@ -835,7 +835,7 @@ void bta_dm_bond (tBTA_DM_MSG *p_data)
     char        *p_name;
 
     status = BTM_SecBond ( p_data->bond.bd_addr, 0, NULL, 0 );
-
+/*MOCKAIC*/ //status = BTM_SUCCESS;
     if (bta_dm_cb.p_sec_cback && (status != BTM_CMD_STARTED))
     {
 
