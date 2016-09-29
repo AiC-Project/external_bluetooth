@@ -203,8 +203,6 @@ void bte_main_enable()
                     (UINT16 *) ((UINT8 *)bte_btu_stack + BTE_BTU_STACK_SIZE),
                     sizeof(bte_btu_stack));
 
-            /*MOCKAIC*/GKI_send_event(BTU_TASK, BT_EVT_PRELOAD_CMPL);
-
     GKI_run(0);
 }
 

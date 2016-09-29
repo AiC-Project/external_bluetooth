@@ -158,7 +158,7 @@ static void cleanup( void )
     if (interface_ready() == FALSE)
         return;
 
-    btif_shutdown_bluetooth();
+    //btif_shutdown_bluetooth();
 
     /* hal callbacks reset upon shutdown complete callback */
 

@@ -274,13 +274,14 @@ static int wait_for_client(int server) {
 
 static void *userial_read_thread(void *arg)
 {
-    int rx_length;
+    int rx_length = 0;
 
     int server = -1;
     int client = -1;
 
 
     USERIALDBG( "start userial_read_thread");
+    raise_priority_a2dp(TASK_HIGH_BTU);
     //_timeout = POLL_TIMEOUT;
 
     if ((server = start_server(UBTDPORT)) == -1) {
@@ -293,6 +294,7 @@ static void *userial_read_thread(void *arg)
     {
         //char current_packet[READ_LIMIT]
         void *buf = (void *) malloc (READ_LIMIT * sizeof(unsigned char));
+        memset(buf, 0, READ_LIMIT);
 
         userial_cb.fd[0] = client ;
         userial_cb.port=UBTDPORT;

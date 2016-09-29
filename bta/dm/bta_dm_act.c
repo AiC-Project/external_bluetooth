@@ -272,7 +272,7 @@ void bta_dm_enable(tBTA_DM_MSG *p_data)
     {
         APPL_TRACE_WARNING0("bta_dm_enable - device already started by another application");
         memset(&sec_event.enable, 0, sizeof ( tBTA_DM_ENABLE ));
-        sec_event.enable.status = BTA_FAILURE;
+        sec_event.enable.status = BTA_SUCCESS;//BTA_FAILURE;
         if( p_data->enable.p_sec_cback != NULL  )
             p_data->enable.p_sec_cback (BTA_DM_ENABLE_EVT, &sec_event);
             /*MOCKAIC*///return;
@@ -3107,7 +3107,7 @@ static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data)
 static void bta_dm_local_name_cback(UINT8 *p_name)
 {
     tBTA_DM_SEC sec_event;
-
+    APPL_TRACE_WARNING0("bta_dm_local_name_cback -sec_event.enable.status ");
     BTM_GetLocalDeviceAddr(sec_event.enable.bd_addr);
     sec_event.enable.status = BTA_SUCCESS;
 

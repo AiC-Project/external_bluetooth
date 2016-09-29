@@ -700,17 +700,17 @@ static void *rfcomm_cback(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_data)
     {
     case BTA_JV_RFCOMM_START_EVT:
         on_srv_rfc_listen_started(&p_data->rfc_start, (uint32_t)user_data);
-    //    break;
+        break;
 
-    //case BTA_JV_RFCOMM_CL_INIT_EVT:
+    case BTA_JV_RFCOMM_CL_INIT_EVT:
         on_cl_rfc_init(&p_data->rfc_cl_init, (uint32_t)user_data);
-    //    break;
+        break;
 
-    //case BTA_JV_RFCOMM_OPEN_EVT:
+    case BTA_JV_RFCOMM_OPEN_EVT:
         BTA_JvSetPmProfile(p_data->rfc_open.handle,BTA_JV_PM_ID_1,BTA_JV_CONN_OPEN);
         on_cli_rfc_connect(&p_data->rfc_open, (uint32_t)user_data);
-    //    break;
-    //case BTA_JV_RFCOMM_SRV_OPEN_EVT:
+        break;
+    case BTA_JV_RFCOMM_SRV_OPEN_EVT:
         BTA_JvSetPmProfile(p_data->rfc_srv_open.handle,BTA_JV_PM_ALL,BTA_JV_CONN_OPEN);
         new_user_data = (void*)on_srv_rfc_connect(&p_data->rfc_srv_open, (uint32_t)user_data);
         break;

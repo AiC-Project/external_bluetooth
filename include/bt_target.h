@@ -737,7 +737,7 @@
 **
 ******************************************************************************/
 #ifndef HCISU_H4_INCLUDED
-#define HCISU_H4_INCLUDED               TRUE
+#define HCISU_H4_INCLUDED               FALSE
 #endif
 
 #ifdef __cplusplus

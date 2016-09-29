@@ -171,33 +171,31 @@ BTU_API UINT32 btu_task (UINT32 param)
     /* wait an event that HCISU is ready */
     BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API,
                 "btu_task pending for preload complete event");
-/*MOCKAIC beg */
-//     for (;;)
-//     {
-//         event = GKI_wait (0xFFFF, 0);
-//         if (event & EVENT_MASK(GKI_SHUTDOWN_EVT))
-//         {
-//             /* indicates BT ENABLE abort */
-//             BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_WARNING,
-//                         "btu_task start abort!");
-//             /*MOCKAIC*///return (0);
-//         }
-//         else if (event & BT_EVT_PRELOAD_CMPL)
-//         {
-//             break;
-//         }
-//         else
-//         {
-//             BT_TRACE_1(TRACE_LAYER_BTU, TRACE_TYPE_WARNING,
-//                 "btu_task ignore evt %04x while pending for preload complete",
-//                 event);
-//             /*MOCKAIC*///break;
-//         }
-//     }
-/*MOCKAIC end*/
 
-    BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API,
+    for (;;)
+    {
+        event = GKI_wait (0xFFFF, 0);
+        if (event & EVENT_MASK(GKI_SHUTDOWN_EVT))
+        {
+            /* indicates BT ENABLE abort */
+            BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_WARNING,
+                        "btu_task start abort!");
+            return (0);
+        }
+        else if (event & BT_EVT_PRELOAD_CMPL)
+        {
+                BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API,
                 "btu_task received preload complete event");
+            break;
+        }
+        else
+        {
+            BT_TRACE_1(TRACE_LAYER_BTU, TRACE_TYPE_WARNING,
+                "btu_task ignore evt %04x while pending for preload complete",
+                event);
+            break;
+        }
+    }
 #endif
 
     /* Initialize the mandatory core stack control blocks
@@ -333,7 +331,7 @@ int rr = 0;
 
                         //}
 /*MOCKAIC end*/
-                       //GKI_freebuf(p_msg);
+                       GKI_freebuf(p_msg);
                        break;
                     case BT_EVT_TO_BTU_HCI_EVT:
 
@@ -653,10 +651,15 @@ int rr = 0;
         }
 #endif
 
-        if (event & EVENT_MASK(APPL_EVT_7))
-            break;
+        if (event & EVENT_MASK(APPL_EVT_7)){
+                         BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API,
+                "EVENT_MASK(APPL_EVT_7) shutdown!");
+            //break;
+        }
     }
 
+    BT_TRACE_0(TRACE_LAYER_BTU, TRACE_TYPE_API,
+            "BTU_TASK  return(0)");
     return(0);
 }
 
