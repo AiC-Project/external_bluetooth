@@ -258,7 +258,10 @@ UINT8 btif_is_dut_mode(void)
 
 int btif_is_enabled(void)
 {
-    return 1;/*MOCKAIC*///((!btif_is_dut_mode()) && (btif_core_state == BTIF_CORE_STATE_ENABLED));
+    if (btif_core_state == BTIF_CORE_STATE_ENABLED)
+        return 1;
+    else
+        return 0;
 }
 
 /*******************************************************************************
@@ -624,21 +627,23 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status, BD_ADDR local_bd)
     if (status == BTA_SUCCESS)
     {
         /* initialize a2dp service */
-        btif_av_init();
+        //btif_av_init();
 
         /* init rfcomm & l2cap api */
-        btif_sock_init();
+        //btif_sock_init();
 
         /* init pan */
-        btif_pan_init();
+        //btif_pan_init();
 
         /* load did configuration */
+        BTIF_TRACE_WARNING0("btif_enable_bluetooth_evt - load did configuration");
         bte_load_did_conf(BTE_DID_CONF_FILE);
 
 #ifdef BTIF_DM_OOB_TEST
-        btif_dm_load_local_oob();
+        //btif_dm_load_local_oob();
 #endif
         /* now fully enabled, update state */
+        BTIF_TRACE_WARNING0("btif_enable_bluetooth_evt - now fully enabled, update state");
         btif_core_state = BTIF_CORE_STATE_ENABLED;
 
         HAL_CBACK(bt_hal_cbacks, adapter_state_changed_cb, BT_STATE_ON);
@@ -646,11 +651,12 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status, BD_ADDR local_bd)
     else
     {
         /* cleanup rfcomm & l2cap api */
-        btif_sock_cleanup();
+        //btif_sock_cleanup();
 
-        btif_pan_cleanup();
+        //btif_pan_cleanup();
 
         /* we failed to enable, reset state */
+        BTIF_TRACE_WARNING0("btif_enable_bluetooth_evt - we failed to enable, reset state");
         btif_core_state = BTIF_CORE_STATE_DISABLED;
 
         HAL_CBACK(bt_hal_cbacks, adapter_state_changed_cb, BT_STATE_OFF);
@@ -721,10 +727,10 @@ void btif_disable_bluetooth_evt(void)
     BTIF_TRACE_ERROR1("%s", __FUNCTION__);
 
 #if (defined(HCILP_INCLUDED) && HCILP_INCLUDED == TRUE)
-    bte_main_enable_lpm(FALSE);
+    //bte_main_enable_lpm(FALSE);
 #endif
 
-    bte_main_disable();
+    //bte_main_disable();
 
     /* update local state */
     btif_core_state = BTIF_CORE_STATE_DISABLED;
@@ -1697,24 +1703,36 @@ static void btd_to_btif(BT_HDR *p_msg){
             case INIT:
             {
                 BTIF_TRACE_ERROR0("INIT");
+                //bt_utils_init();
+                //btif_init_bluetooth();
             }
                 break;
             case ENABLE:
             {
-                BTIF_TRACE_ERROR0("ENABLE");
-                btif_enable_bluetooth();
+                BTIF_TRACE_ERROR0("ENABLE - enable_bluetooth");
+                //btif_enable_bluetooth();();
+                tBTA_DM_SEC_EVT event = BTA_DM_ENABLE_EVT;
+                tBTA_DM_SEC *p_data = (tBTA_DM_SEC * )malloc (sizeof (tBTA_DM_SEC) ) ; ;
+                p_data->enable.status = BTA_SUCCESS ;
+                BTM_GetLocalDeviceAddr(p_data->enable.bd_addr);
+                //bte_dm_evt(event,p_data);
+                btif_enable_bluetooth_evt(p_data->enable.status, p_data->enable.bd_addr);
+                BTIF_TRACE_ERROR0("ENABLE -- DONE !");
             }
                 break;
             case DISABLE:
             {
                 BTIF_TRACE_ERROR0("DISABLE");
-                btif_disable_bluetooth();
-                BTA_DisableBluetooth();
+                //btif_disable_bluetooth();
+                btif_disable_bluetooth_evt();
+                BTIF_TRACE_ERROR0("DISABLE -- DONE !");
             }
                 break;
             case CLEANUP:
             {
                 BTIF_TRACE_ERROR0("CLEANUP");
+                btif_shutdown_bluetooth();
+                BTIF_TRACE_ERROR0("CLEANUP -- DONE !");
             }
                 break;
             case GET_ADAPTER_PROPERTIES:
