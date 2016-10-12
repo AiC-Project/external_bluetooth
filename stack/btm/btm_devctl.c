@@ -406,7 +406,7 @@ static void btm_dev_reset (void)
 
     btu_start_timer (&btm_cb.devcb.reset_timer, BTU_TTYPE_BTM_DEV_CTL,
                      BTM_DEV_RESET_TIMEOUT);
-    btsnd_hcic_reset (LOCAL_BR_EDR_CONTROLLER_ID);
+    //btsnd_hcic_reset (LOCAL_BR_EDR_CONTROLLER_ID);
 }
 
 
