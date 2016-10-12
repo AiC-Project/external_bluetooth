@@ -1738,6 +1738,8 @@ static void btd_to_btif(BT_HDR *p_msg){
             case GET_ADAPTER_PROPERTIES:
             {
                 BTIF_TRACE_ERROR0("GET_ADAPTER_PROPERTIES");
+                btif_get_adapter_properties();
+                //btif_in_get_adapter_properties();
             }
                 break;
             case GET_ADAPTER_PROPERTY:
