@@ -205,7 +205,7 @@ const char * const bt_layer_tags[] = {
 #define MSG_BUFFER_OFFSET 0
 #endif
 
-//#define DBG_TRACE
+#define DBG_TRACE TRUE
 
 #if defined( DBG_TRACE )
 #define DBG_TRACE_API0( m ) BT_TRACE( TRACE_LAYER_HCI, TRACE_TYPE_API, m )

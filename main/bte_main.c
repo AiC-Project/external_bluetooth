@@ -213,11 +213,11 @@ void bte_main_enable()
 
     lpm_enabled = FALSE;
 
+    bte_hci_enable();
+
     GKI_create_task((TASKPTR)btu_task, BTU_TASK, BTE_BTU_TASK_STR,
                     (UINT16 *) ((UINT8 *)bte_btu_stack + BTE_BTU_STACK_SIZE),
                     sizeof(bte_btu_stack));
-
-    bte_hci_enable();
 
     GKI_run();
 }
@@ -371,7 +371,8 @@ static void preload_wait_timeout(union sigval arg)
     else
     {
         /* Notify BTIF_TASK that the init procedure had failed*/
-        GKI_send_event(BTIF_TASK, BT_EVT_HARDWARE_INIT_FAIL);
+        /*MOCKAIC*///GKI_send_event(BTIF_TASK, BT_EVT_HARDWARE_INIT_FAIL);
+        /*MOCKAIC*/GKI_send_event(BTIF_TASK, BT_EVT_PRELOAD_CMPL);
     }
 }
 
@@ -781,11 +782,9 @@ static int data_ind(TRANSAC transac, char *p_buf, int len)
     UNUSED(p_buf);
     UNUSED(len);
 
-    /*
-    APPL_TRACE_DEBUG("HC data_ind event=0x%04X (len=%d)", p_msg->event, len);
-    */
-
-    GKI_send_msg (BTU_TASK, BTU_HCI_RCV_MBOX, transac);
+    APPL_TRACE_DEBUG("HC data_ind event=0x%04X (len=%d) p_msg->len=%d ", p_msg->event, len , p_msg->len );
+    /*MOCKAIC*/memcpy ( (UINT8 *)(p_msg+1) + p_msg->len , p_buf , p_msg->len );
+    GKI_send_msg(BTU_TASK, BTU_HCI_RCV_MBOX, p_msg);
     return BT_HC_STATUS_SUCCESS;
 }
 

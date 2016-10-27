@@ -42,7 +42,7 @@
 
 /* TRUE to enable DEBUG traces for btm_inq */
 #ifndef BTM_INQ_DEBUG
-#define BTM_INQ_DEBUG   FALSE
+#define BTM_INQ_DEBUG   TRUE
 #endif
 /********************************************************************************/
 /*                 L O C A L    D A T A    D E F I N I T I O N S                */
@@ -2683,6 +2683,20 @@ void btm_process_remote_name (BD_ADDR bda, BD_NAME bdn, UINT16 evt_len, UINT8 hc
     tBTM_INQ_INFO          *p_cur;
 #endif
 
+    /*MOCKAIC beg*/
+    BTM_TRACE_EVENT("A btm_process_remote_name Goooo");
+    BD_ADDR bda1={0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+    memcpy(bda, bda1, 6);
+    BTM_TRACE_EVENT("B btm_process_remote_name Goooo");
+    hci_status=HCI_SUCCESS;
+    evt_len = 4;
+    //char p_name[]="aic";
+    //memset(bdn, 0, (evt_len + 1));
+    BCM_STRNCPY_S( (char*)bdn, sizeof(BD_NAME), "aic", 3);
+
+    BTM_TRACE_EVENT("C btm_process_remote_name Goooo");
+    /*MOCKAIC end*/
+
     if (bda != NULL)
     {
         BTM_TRACE_EVENT("BDA %02x:%02x:%02x:%02x:%02x:%02x",bda[0], bda[1],
@@ -2950,7 +2964,8 @@ tBTM_STATUS BTM_WriteEIR( BT_HDR *p_buff )
 *******************************************************************************/
 UINT8 *BTM_CheckEirData( UINT8 *p_eir, UINT8 type, UINT8 *p_length )
 {
-#if (BTM_EIR_CLIENT_INCLUDED == TRUE)
+#define MOCKAIC FALSE
+#if (BTM_EIR_CLIENT_INCLUDED == TRUE && MOCKAIC==TRUE)
     UINT8 *p = p_eir;
     UINT8 length;
     UINT8 eir_type;

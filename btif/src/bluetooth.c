@@ -40,7 +40,7 @@
 #include <hardware/bt_gatt.h>
 #include <hardware/bt_rc.h>
 
-#define LOG_NDDEBUG 0
+#define LOG_NDDEBUG 1
 #define LOG_TAG "bluedroid"
 
 #include "btif_api.h"
@@ -123,12 +123,13 @@ static uint8_t interface_ready(void)
 
 static int init(bt_callbacks_t* callbacks )
 {
-    ALOGI("init");
+    ALOGI("MOCKAIC init - in ");
 
     /* sanity check */
     if (interface_ready() == TRUE)
-        return BT_STATUS_DONE;
+        //return BT_STATUS_DONE;
 
+    ALOGI("MOCKAIC init - in 2 ");
     /* store reference to user callbacks */
     bt_hal_cbacks = callbacks;
 
@@ -139,16 +140,19 @@ static int init(bt_callbacks_t* callbacks )
     /* init btif */
     btif_init_bluetooth();
 
+    ALOGI("MOCKAIC init - OUT ");
     return BT_STATUS_SUCCESS;
 }
 
 static int enable( void )
 {
-    ALOGI("enable");
+    ALOGI("MOCKAIC - enable in ");
 
     /* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
+
+    ALOGI("MOCKAIC - enable out");
 
     return btif_enable_bluetooth();
 }
@@ -168,7 +172,7 @@ static void cleanup( void )
     if (interface_ready() == FALSE)
         return;
 
-    btif_shutdown_bluetooth();
+    //btif_shutdown_bluetooth();
 
     /* hal callbacks reset upon shutdown complete callback */
 

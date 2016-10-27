@@ -217,6 +217,7 @@ int btif_config_get(const char* section, const char* key, const char* name, char
         }
         unlock_slot(&slot_lock);
     }
+    /*MOCKAIC*///ret = TRUE;
     return ret;
 }
 int btif_config_set(const char* section, const char* key, const char* name, const char*  value, int bytes, int type)
@@ -447,7 +448,7 @@ static inline short find_inode(const cfg_node* p, const char* name)
     {
         int i;
         int count = GET_CHILD_COUNT(p);
-        //bdld("parent name:%s, child name:%s, child count:%d", p->name, name, count);
+        bdld("parent name:%s, child name:%s, child count:%d", p->name, name, count);
         for(i = 0; i < count; i++)
         {
             if(p->child[i].name && *p->child[i].name &&

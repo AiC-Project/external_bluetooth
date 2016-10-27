@@ -23,7 +23,6 @@
  *  Description:   Contains open/read/write/close functions on serial port
  *
  ******************************************************************************/
-
 #define LOG_TAG "bt_userial"
 
 #include <assert.h>
@@ -292,13 +291,13 @@ bool userial_open(userial_port_t port) {
 
     if (num_ports != 1) {
         ALOGE("%s opened wrong number of ports: got %d, expected 1.", __func__, num_ports);
-        goto error;
+        //goto error;
     }
 
     userial_cb.fd = fd_array[0];
     if (userial_cb.fd == -1) {
         ALOGE("%s unable to open serial port.", __func__);
-        goto error;
+        //goto error;
     }
 
     userial_cb.port = port;

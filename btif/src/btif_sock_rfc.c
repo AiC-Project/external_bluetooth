@@ -322,7 +322,7 @@ bt_status_t btsock_rfc_listen(const char* service_name, const uint8_t* service_u
     }
     *sock_fd = -1;
     if(!is_init_done())
-        return BT_STATUS_NOT_READY;
+        /*MOCKAIC*/APPL_TRACE_DEBUG("is_init_done NOK :%s", service_name);
     if(is_uuid_empty(service_uuid))
         service_uuid = UUID_SPP; //use serial port profile to listen to specified channel
     else

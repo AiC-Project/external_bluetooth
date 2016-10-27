@@ -41,7 +41,7 @@
 ******************************************************************************/
 
 #ifndef HCI_DBG
-#define HCI_DBG FALSE
+#define HCI_DBG TRUE
 #endif
 
 #if (HCI_DBG == TRUE)

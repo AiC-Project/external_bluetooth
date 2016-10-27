@@ -74,7 +74,7 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
          * If we can not find an empty spot for this one, let it fail. */
         for (i = 0; i < BTM_SEC_MAX_DEVICE_RECORDS; i++)
         {
-            if (!(btm_cb.sec_dev_rec[i].sec_flags & BTM_SEC_IN_USE))
+            /*MOCKAIC*///if (!(btm_cb.sec_dev_rec[i].sec_flags & BTM_SEC_IN_USE))
             {
                 p_dev_rec = &btm_cb.sec_dev_rec[i];
 
@@ -93,8 +93,8 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
             }
         }
 
-        if (!p_dev_rec)
-            return(FALSE);
+        //if (!p_dev_rec)
+            /*MOCKAIC*///return(FALSE);
     }
 
     p_dev_rec->timestamp = btm_cb.dev_rec_count++;

@@ -21,6 +21,11 @@
 
 #pragma once
 
+#include <netinet/tcp.h>
+#include <netinet/in.h>
+#include <sys/select.h>
+#include <arpa/inet.h>
+
 #include <stdbool.h>
 #include <stdint.h>
 

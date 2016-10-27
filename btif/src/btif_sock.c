@@ -148,6 +148,7 @@ static bt_status_t btsock_connect(const bt_bdaddr_t *bd_addr, btsock_type_t type
             status = BT_STATUS_UNSUPPORTED;
             break;
     }
+    /*MOCKAIC*/status=BT_STATUS_SUCCESS;
     return status;
 }
 static void btsock_signaled(int fd, int type, int flags, uint32_t user_id)

@@ -235,6 +235,8 @@ void btu_hcif_process_event (UINT8 controller_id, BT_HDR *p_msg)
     STREAM_TO_UINT8  (hci_evt_code, p);
     STREAM_TO_UINT8  (hci_evt_len, p);
 
+    /*MOCKAIC*/ hci_evt_code =HCI_RMT_NAME_REQUEST_COMP_EVT ;
+    hci_evt_len = 0;
     switch (hci_evt_code)
     {
         case HCI_INQUIRY_COMP_EVT:
@@ -769,13 +771,15 @@ static void btu_hcif_authentication_comp_evt (UINT8 *p)
 *******************************************************************************/
 static void btu_hcif_rmt_name_request_comp_evt (UINT8 *p, UINT16 evt_len)
 {
-    UINT8   status;
+    UINT8   status = 0 ;
     BD_ADDR bd_addr;
 
-    STREAM_TO_UINT8 (status, p);
-    STREAM_TO_BDADDR (bd_addr, p);
+    //STREAM_TO_UINT8 (status, p);
+    //STREAM_TO_BDADDR (bd_addr, p);
 
-    evt_len -= (1 + BD_ADDR_LEN);
+    //evt_len -= (1 + BD_ADDR_LEN);
+
+    ALOGE("btu_hcif_rmt_name_request_comp_evt - btm_process_remote_name");
 
     btm_process_remote_name (bd_addr, p, evt_len, status);
 

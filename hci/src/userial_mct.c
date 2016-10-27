@@ -23,7 +23,6 @@
  *  Description:   Contains open/read/write/close functions on multi-channels
  *
  ******************************************************************************/
-
 #define LOG_TAG "bt_userial_mct"
 
 #include <utils/Log.h>
@@ -39,14 +38,14 @@
 #include "bt_vendor_lib.h"
 #include "bt_utils.h"
 
+#include <strings.h>
+
 /******************************************************************************
 **  Constants & Macros
 ******************************************************************************/
 
-#define USERIAL_DBG TRUE
-
 #ifndef USERIAL_DBG
-#define USERIAL_DBG FALSE
+#define USERIAL_DBG TRUE
 #endif
 
 #if (USERIAL_DBG == TRUE)
@@ -56,6 +55,10 @@
 #endif
 
 #define MAX_SERIAL_PORT (USERIAL_PORT_3 + 1)
+
+
+#define READ_LIMIT 1024
+#define UBTDPORT  33800
 
 enum {
     USERIAL_RX_EXIT,
@@ -134,71 +137,99 @@ static inline int is_signaled(fd_set* set)
 ** Returns         void *
 **
 *******************************************************************************/
-static void *userial_read_thread(void *arg)
-{
-    UNUSED(arg);
+ static int start_server(int port) {
+    int server = -1;
+    struct sockaddr_in srv_addr;
+    long haddr;
 
-    fd_set input;
-    int n;
-    char reason = 0;
+    bzero(&srv_addr, sizeof(srv_addr));
+    srv_addr.sin_family = AF_INET;
+    srv_addr.sin_addr.s_addr = INADDR_ANY;
+    srv_addr.sin_port = htons(port);
 
-    USERIALDBG("Entering userial_read_thread()");
+    if ((server = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        ALOGE(" Start_server : batteryUnable to create socket\n");
+        return -1;
+    }
 
-    userial_running = 1;
+    int yes = 1;
+    setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 
-    raise_priority_a2dp(TASK_HIGH_USERIAL_READ);
+    if (bind(server, (struct sockaddr *)&srv_addr, sizeof(srv_addr)) < 0) {
+        ALOGE(" Start_server : batteryUnable to bind socket, errno=%d\n", errno);
+        return -1;
+    }
 
-    while (userial_running)
-    {
-        /* Initialize the input fd set */
-        FD_ZERO(&input);
-        FD_SET(userial_cb.fd[CH_EVT], &input);
-        FD_SET(userial_cb.fd[CH_ACL_IN], &input);
-
-        int fd_max = create_signal_fds(&input);
-        fd_max = (fd_max>userial_cb.fd[CH_EVT]) ? fd_max : userial_cb.fd[CH_EVT];
-        fd_max = (fd_max>userial_cb.fd[CH_ACL_IN]) ? fd_max : userial_cb.fd[CH_ACL_IN];
-
-        /* Do the select */
-        n = 0;
-        n = select(fd_max+1, &input, NULL, NULL, NULL);
-        if(is_signaled(&input))
-        {
-            reason = reset_signal();
-            if (reason == USERIAL_RX_EXIT)
-            {
-                ALOGI("exiting userial_read_thread");
-                userial_running = 0;
-                break;
-            }
-        }
-
-        if (n > 0)
-        {
-            /* We might have input */
-            if (FD_ISSET(userial_cb.fd[CH_EVT], &input))
-            {
-                hci_mct_receive_evt_msg();
-            }
-
-            if (FD_ISSET(userial_cb.fd[CH_ACL_IN], &input))
-            {
-                hci_mct_receive_acl_msg();
-            }
-        }
-        else if (n < 0)
-            ALOGW( "select() Failed");
-        else if (n == 0)
-            ALOGW( "Got a select() TIMEOUT");
-    } /* while */
-
-    userial_running = 0;
-    USERIALDBG("Leaving userial_evt_read_thread()");
-    pthread_exit(NULL);
-
-    return NULL;    // Compiler friendly
+    return server;
 }
 
+static int wait_for_client(int server) {
+    int client = -1;
+
+    if (listen(server, 1) < 0) {
+        SLOGE("Unable to listen to socket, errno=%d\n", errno);
+        return -1;
+    }
+
+    SLOGE("wait_for_client\n");
+    client = accept(server, NULL, 0);
+
+    if (client < 0) {
+        SLOGE("Unable to accept socket for main conection, errno=%d\n", errno);
+        return -1;
+    }
+
+    return client;
+}
+
+static void *userial_read_thread(void *arg)
+{
+    int rx_length = 0;
+
+    int server = -1;
+    int client = -1;
+
+
+    USERIALDBG( "start userial_read_thread");
+    raise_priority_a2dp(TASK_HIGH_BTU);
+    //_timeout = POLL_TIMEOUT;
+
+    if ((server = start_server(UBTDPORT)) == -1) {
+        USERIALDBG("userial_read_thread : start_server unable to create socket\n");
+        return NULL;
+    }
+
+   // Listen for main connection
+    while ((client = wait_for_client(server)) != -1)
+    {
+        //char current_packet[READ_LIMIT]
+        void *buf = (void *) malloc (READ_LIMIT * sizeof(unsigned char));
+        memset(buf, 0, READ_LIMIT);
+
+        userial_cb.fd[0] = client ;
+        userial_cb.port=UBTDPORT;
+        if((rx_length = recv(client, buf, 1, MSG_PEEK))== -1)
+        {
+            USERIALDBG("userial_read_thread::  Error receiving data  !!! ");
+        }else{
+            USERIALDBG("userial_read_thread::  rx_length %d ", rx_length);
+            if (rx_length > 0){
+                if ( *((char *)(buf)) == -1 )
+                {
+                    hci_mct_receive_acl_msg();
+                }else if ( *((char *)(buf)) == -2 )
+                {
+                    hci_mct_receive_evt_msg();
+                }else{
+                    hci_mct_receive_evt_msg_aic(MSG_HC_TO_BTIF_HCI_EVT);
+                }
+            }
+        }
+    } /* end while */
+
+    pthread_exit(NULL);
+    return NULL;
+}
 
 /*****************************************************************************
 **   Userial API Functions
@@ -249,7 +280,7 @@ bool userial_open(userial_port_t port)
         ALOGE("Port > MAX_SERIAL_PORT");
         return false;
     }
-
+/*
     result = vendor_send_command(BT_VND_OP_USERIAL_OPEN, &userial_cb.fd);
     if ((result != 2) && (result != 4))
     {
@@ -271,6 +302,7 @@ bool userial_open(userial_port_t port)
         vendor_send_command(BT_VND_OP_USERIAL_CLOSE, NULL);
         return false;
     }
+*/
 
     userial_cb.port = port;
 
@@ -298,7 +330,11 @@ bool userial_open(userial_port_t port)
 uint16_t userial_read(uint16_t msg_id, uint8_t *p_buffer, uint16_t len)
 {
     int ret = -1;
-    int ch_idx = (msg_id == MSG_HC_TO_STACK_HCI_EVT) ? CH_EVT : CH_ACL_IN;
+    // int ch_idx = (msg_id == MSG_HC_TO_STACK_HCI_EVT) ? CH_EVT : CH_ACL_IN;
+    int ch_idx =0;
+
+    ALOGW( "userial_read: read() reading %d !", len);
+
 
     ret = read(userial_cb.fd[ch_idx], p_buffer, (size_t)len);
     if (ret <= 0)

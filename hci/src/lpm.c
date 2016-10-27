@@ -250,7 +250,7 @@ void lpm_vnd_cback(uint8_t vnd_result)
 void lpm_init(void)
 {
     memset(&bt_lpm_cb, 0, sizeof(bt_lpm_cb_t));
-    vendor_send_command(BT_VND_OP_GET_LPM_IDLE_TIMEOUT, &bt_lpm_cb.timeout_ms);
+    /*MOCKAIC*///vendor_send_command(BT_VND_OP_GET_LPM_IDLE_TIMEOUT, &bt_lpm_cb.timeout_ms);
 }
 
 /*******************************************************************************

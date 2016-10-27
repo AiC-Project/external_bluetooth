@@ -193,6 +193,7 @@ BTU_API UINT32 btu_task (UINT32 param)
             BT_TRACE(TRACE_LAYER_BTU, TRACE_TYPE_WARNING,
                 "btu_task ignore evt %04x while pending for preload complete",
                 event);
+            /*MOCKAIC*/break;
         }
     }
 
@@ -254,8 +255,16 @@ BTU_API UINT32 btu_task (UINT32 param)
                         btm_route_sco_data (p_msg);
                         break;
 #endif
-
+/*MOCKAIC beg*/
+                     case BT_EVT_CONTEXT_AICSET_EVT:
+                         BT_TRACE(TRACE_LAYER_BTU, TRACE_TYPE_API, "post event to start timer in BTU task GOOOOO BT_EVT_CONTEXT_AICSET_EVT %x" , p_msg->event);
+                         p_msg->event = BT_EVT_CONTEXT_AICSET_EVT;
+                         GKI_send_msg(BTIF_TASK, BTU_BTIF_MBOX, p_msg);
+                         GKI_freebuf(p_msg);
+                       break;
                     case BT_EVT_TO_BTU_HCI_EVT:
+                        /* post event to start timer in BTU task */
+                        BT_TRACE(TRACE_LAYER_BTU, TRACE_TYPE_API, "post event to start timer in BTU task GOOOOO");
                         btu_hcif_process_event ((UINT8)(p_msg->event & BT_SUB_EVT_MASK), p_msg);
                         GKI_freebuf(p_msg);
 
@@ -627,8 +636,11 @@ BTU_API UINT32 btu_task (UINT32 param)
             }
         }
 
-        if (event & EVENT_MASK(APPL_EVT_7))
-            break;
+       if (event & EVENT_MASK(APPL_EVT_7)){
+                   BT_TRACE(TRACE_LAYER_BTU, TRACE_TYPE_WARNING,
+                "EVENT_MASK(APPL_EVT_7) shutdown!");
+            //break;
+        }
     }
 
     return(0);

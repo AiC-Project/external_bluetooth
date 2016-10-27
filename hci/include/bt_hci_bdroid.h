@@ -77,6 +77,9 @@ typedef enum {
 #define MSG_HC_TO_STACK_HCI_EVT        0x1000 /* eq. BT_EVT_TO_BTU_HCI_EVT */
 #define MSG_HC_TO_STACK_L2C_SEG_XMIT   0x1900 /* eq. BT_EVT_TO_BTU_L2C_SEG_XMIT */
 
+/*MOCKAIC Message to Btif*/
+#define MSG_HC_TO_BTIF_HCI_EVT         0xAC00 /* eq. BT_EVT_CONTEXT_AICSET_EVT */
+
 /* Message event ID passed from stack to vendor lib */
 #define MSG_STACK_TO_HC_HCI_ACL        0x2100 /* eq. BT_EVT_TO_LM_HCI_ACL */
 #define MSG_STACK_TO_HC_HCI_SCO        0x2200 /* eq. BT_EVT_TO_LM_HCI_SCO */

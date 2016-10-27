@@ -42,7 +42,7 @@
 #include "vendor.h"
 
 #ifndef BTHC_DBG
-#define BTHC_DBG FALSE
+#define BTHC_DBG TRUE
 #endif
 
 #if (BTHC_DBG == TRUE)
@@ -103,6 +103,7 @@ static BUFFER_Q tx_q;
 ******************************************************************************/
 
 static void event_preload(UNUSED_ATTR void *context) {
+  BTHCDBG("event_preload");
   userial_open(USERIAL_PORT_1);
   vendor_send_command(BT_VND_OP_FW_CFG, NULL);
 }
@@ -341,8 +342,8 @@ static int init(const bt_hc_callbacks_t* p_cb, unsigned char *local_bdaddr)
     extern tHCI_IF hci_mct_func_table;
     p_hci_if = &hci_mct_func_table;
 #else
-    extern tHCI_IF hci_h4_func_table;
-    p_hci_if = &hci_h4_func_table;
+     extern tHCI_IF hci_h4_func_table;
+     p_hci_if = &hci_h4_func_table;
 #endif
 
     p_hci_if->init();

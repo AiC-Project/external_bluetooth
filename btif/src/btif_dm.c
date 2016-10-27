@@ -2021,8 +2021,46 @@ void bte_dm_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *p_data)
 {
     bt_status_t status;
 
+    BTIF_TRACE_ERROR("%s event=%s switch context to btif task context", __FUNCTION__, dump_dm_search_event(event));
     /* switch context to btif task context (copy full union size for convenience) */
     status = btif_transfer_context(btif_dm_upstreams_evt, (uint16_t)event, (void*)p_data, sizeof(tBTA_DM_SEC), NULL);
+
+    /* catch any failed context transfers */
+    ASSERTC(status == BT_STATUS_SUCCESS, "context transfer failed", status);
+}
+void bte_dm_aic_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data)
+{
+    bt_status_t status;
+
+    //BTIF_TRACE_ERROR2("%s event=%s switch context to btif task context", __FUNCTION__, dump_dm_search_event(event));
+    /* switch context to btif task context (copy full union size for convenience) */
+    status = btif_transfer_context(btif_dm_search_devices_evt, (uint16_t)event, (void*)p_data, sizeof(tBTA_DM_SEARCH), NULL);
+
+    /* catch any failed context transfers */
+    ASSERTC(status == BT_STATUS_SUCCESS, "context transfer failed", status);
+}
+
+void bte_dm_aic_evt_2(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data)
+{
+    bt_status_t status;
+
+    //BTIF_TRACE_ERROR2("%s event=%s switch context to btif task context", __FUNCTION__, dump_dm_search_event(event));
+    /* switch context to btif task context (copy full union size for convenience) */
+    status = btif_transfer_context(btif_dm_search_services_evt, (uint16_t)event, (void*)p_data, sizeof(tBTA_DM_SEARCH), NULL);
+
+    /* catch any failed context transfers */
+    ASSERTC(status == BT_STATUS_SUCCESS, "context transfer failed", status);
+}
+
+void bte_dm_aic_evt_3(BD_ADDR bd_addr)
+{
+    bt_status_t status;
+    bt_bdaddr_t bt_bd_addr;
+    //BTIF_TRACE_ERROR2("%s event=%s switch context to btif task context", __FUNCTION__, dump_dm_search_event(event));
+    /* switch context to btif task context (copy full union size for convenience) */
+     bdcpy(bt_bd_addr.address, bd_addr);
+     status = btif_transfer_context(btif_dm_generic_evt, BTIF_DM_CB_BOND_STATE_BONDING,
+                              (char *)&bt_bd_addr, sizeof(bt_bdaddr_t), NULL);
 
     /* catch any failed context transfers */
     ASSERTC(status == BT_STATUS_SUCCESS, "context transfer failed", status);

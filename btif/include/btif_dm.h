@@ -29,6 +29,10 @@
  */
 void bte_dm_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *p_data);
 
+void bte_dm_aic_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data);
+void bte_dm_aic_evt_2(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data);
+void bte_dm_aic_evt_3(BD_ADDR bd_addr);
+
 /**
  * Notify BT disable being initiated. DM may chose to abort
  * pending commands, like pairing

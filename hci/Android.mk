@@ -14,9 +14,11 @@ LOCAL_SRC_FILES := \
 
 LOCAL_CFLAGS := -Wno-unused-parameter
 
+BLUETOOTH_HCI_USE_MCT := true
+
 ifeq ($(BLUETOOTH_HCI_USE_MCT),true)
 
-LOCAL_CFLAGS += -DHCI_USE_MCT
+LOCAL_CFLAGS := -DHCI_USE_MCT
 
 LOCAL_SRC_FILES += \
 	src/hci_mct.c \
@@ -35,6 +37,7 @@ LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/../osi/include \
 	$(LOCAL_PATH)/../utils/include \
         $(bdroid_C_INCLUDES)
+
 
 LOCAL_MODULE := libbt-hci
 LOCAL_MODULE_TAGS := optional

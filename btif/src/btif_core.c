@@ -149,7 +149,8 @@ void bte_main_config_hci_logging(BOOLEAN enable, BOOLEAN bt_disabled);
 /************************************************************************************
 **  Functions
 ************************************************************************************/
-
+static bt_status_t btif_in_get_adapter_properties(void);
+/*MOCKAIC*/static void btd_to_btif(BT_HDR *msg);
 
 /*****************************************************************************
 **   Context switching functions
@@ -259,7 +260,10 @@ UINT8 btif_is_dut_mode(void)
 
 int btif_is_enabled(void)
 {
-    return ((!btif_is_dut_mode()) && (btif_core_state == BTIF_CORE_STATE_ENABLED));
+    if (btif_core_state == BTIF_CORE_STATE_ENABLED)
+        return 1;
+    else
+        return 0;
 }
 
 /*******************************************************************************
@@ -331,6 +335,10 @@ static void btif_task(UINT32 params)
                 {
                     case BT_EVT_CONTEXT_SWITCH_EVT:
                         btif_context_switched(p_msg);
+                        break;
+                    case BT_EVT_CONTEXT_AICSET_EVT:
+                        BTIF_TRACE_ERROR("btif_task:  fetched event BT_EVT_CONTEXT_AICSET_EVT");
+                        btd_to_btif(p_msg);
                         break;
                     default:
                         BTIF_TRACE_ERROR("unhandled btif event (%d)", p_msg->event & BT_EVT_MASK);
@@ -532,7 +540,7 @@ bt_status_t btif_enable_bluetooth(void)
     if (btif_core_state != BTIF_CORE_STATE_DISABLED)
     {
         ALOGD("not disabled\n");
-        return BT_STATUS_DONE;
+        //return BT_STATUS_DONE;
     }
 
     btif_core_state = BTIF_CORE_STATE_ENABLING;
@@ -563,6 +571,7 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status, BD_ADDR local_bd)
     bdcpy(bd_addr.address, local_bd);
     BTIF_TRACE_DEBUG("%s: status %d, local bd [%s]", __FUNCTION__, status,
                                                      bd2str(&bd_addr, &bdstr));
+    status = BTA_SUCCESS;
 
     if (bdcmp(btif_local_bd_addr.address,local_bd))
     {
@@ -610,19 +619,19 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status, BD_ADDR local_bd)
     if (status == BTA_SUCCESS)
     {
         /* initialize a2dp service */
-        btif_av_init();
+        //btif_av_init();
 
         /* init rfcomm & l2cap api */
-        btif_sock_init();
+        //btif_sock_init();
 
         /* init pan */
-        btif_pan_init();
+        //btif_pan_init();
 
         /* load did configuration */
         bte_load_did_conf(BTE_DID_CONF_FILE);
 
 #ifdef BTIF_DM_OOB_TEST
-        btif_dm_load_local_oob();
+        //btif_dm_load_local_oob();
 #endif
         /* now fully enabled, update state */
         btif_core_state = BTIF_CORE_STATE_ENABLED;
@@ -632,9 +641,9 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status, BD_ADDR local_bd)
     else
     {
         /* cleanup rfcomm & l2cap api */
-        btif_sock_cleanup();
+        //btif_sock_cleanup();
 
-        btif_pan_cleanup();
+        //btif_pan_cleanup();
 
         /* we failed to enable, reset state */
         btif_core_state = BTIF_CORE_STATE_DISABLED;
@@ -707,14 +716,14 @@ void btif_disable_bluetooth_evt(void)
     BTIF_TRACE_DEBUG("%s", __FUNCTION__);
 
 #if (defined(HCILP_INCLUDED) && HCILP_INCLUDED == TRUE)
-    bte_main_enable_lpm(FALSE);
+    //bte_main_enable_lpm(FALSE);
 #endif
 
 #if (BLE_INCLUDED == TRUE)
-     BTA_VendorCleanup();
+     //BTA_VendorCleanup();
 #endif
 
-     bte_main_disable();
+     //bte_main_disable();
 
     /* update local state */
     btif_core_state = BTIF_CORE_STATE_DISABLED;
@@ -1524,4 +1533,466 @@ bt_status_t btif_config_hci_snoop_log(uint8_t enable)
     bte_main_config_hci_logging(enable != 0,
              btif_core_state == BTIF_CORE_STATE_DISABLED);
     return BT_STATUS_SUCCESS;
+}
+
+
+
+
+/**
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ */
+#define MASK_BTIF 0b10000000 // 0b 1000 0000
+#define MASK_BTE  0b01000000 // 0b 0100 0000
+
+#define setBTIF(zz) ( zz | MASK_BTIF )
+#define setBTE(zz)  ( zz | MASK_BTE  )
+
+#define isBTIF(vv) (( ( (vv&MASK_BTIF) >> 7)  && !( (vv&MASK_BTE )  >> 6) ) )
+#define isBTE(ww)  (( ( (ww&MASK_BTE ) >> 6)  && !( (ww&MASK_BTIF)  >> 7) ) )
+
+#define getBTIF(yy) ( yy & (~(MASK_BTE|MASK_BTIF)) )
+#define getBTE(yy)  ( yy & (~(MASK_BTE|MASK_BTIF)) )
+
+enum
+{
+    INIT,
+    ENABLE,
+    DISABLE,
+    CLEANUP,
+    GET_ADAPTER_PROPERTIES,
+    GET_ADAPTER_PROPERTY,
+    SET_ADAPTER_PROPERTY, // SET_ADAPTER_PROPERTY =  SET_ADAPTER_PROPERTY_BDNAME,
+    GET_REMOTE_DEVICE_PROPERTIES,
+    GET_REMOTE_DEVICE_PROPERTY,
+    SET_REMOTE_DEVICE_PROPERTY,
+    GET_REMOTE_SERVICE_RECORD,
+    GET_REMOTE_SERVICES,
+    START_DISCOVERY,
+    CANCEL_DISCOVERY,
+    CREATE_BOND,
+    REMOVE_BOND,
+    CANCEL_BOND,
+    PIN_REPLY,
+    SSP_REPLY,
+    GET_PROFILE_INTERFACE,
+    DUT_MODE_CONFIGURE,
+    DUT_MODE_SEND,
+    LE_TEST_MODE,
+    CONFIG_HCI_SNOOP_LOG,
+//... ... ...//
+    SET_ADAPTER_PROPERTY_BDNAME,
+    SET_ADAPTER_PROPERTY_SCAN_MODE_NONE,
+    SET_ADAPTER_PROPERTY_SCAN_MODE_CONNECTABLE,
+    SET_ADAPTER_PROPERTY_SCAN_MODE_CONNECTABLE_DISCOVERABLE,
+    SET_ADAPTER_PROPERTY_DISCOVERY_TIMEOUT_2M,
+    SET_ADAPTER_PROPERTY_DISCOVERY_TIMEOUT_5M,
+    SET_ADAPTER_PROPERTY_DISCOVERY_TIMEOUT_1H,
+    SET_ADAPTER_PROPERTY_DISCOVERY_TIMEOUT_NE
+};
+
+enum
+{
+        INQ_RES,
+        BOND_STATE,
+        DISC_RES
+};
+
+#define BTA_SERVICE_ID_TO_SERVICE_MASK(id)       (1 << (id))
+
+typedef struct
+{
+    BD_ADDR         bda;                /* HID device bd address    */
+    UINT8         status;             /* operation status         */
+    UINT8           handle;             /* device handle            */
+} tBTA_HH_DEV_INFO;
+
+static void str2addr(BD_ADDR bd_addr, char* bb)
+{
+    int ii = 0;
+
+    for(ii=5;ii>=0;ii--)
+        bd_addr[ii] = (unsigned char) strtoul(bb, (char **)(bb+ii*2), 16);
+
+    return ;
+}
+
+static void str2cod(DEV_CLASS dev_class, char* cc)
+{
+  char *pch = cc ;
+  char *p   = (char *) malloc ( 2) ;
+  int ii=0;
+
+  while ( pch!=NULL && ii != 6)
+  {
+    strncpy(p, pch+ii*2, 2);
+    dev_class[ii] = (unsigned char) strtoul(p, (char **)p, 16);
+    ii++;
+  }
+    return ;
+}
+
+static void btd_to_btif(BT_HDR *p_msg){
+
+    UINT8 cmd ;
+    char bd_name[512] ;
+    BD_ADDR bda={0x1, 0x1, 0x1, 0x1, 0x1, 0x1};
+    UINT32 nameLen=0;
+    int offHdr = 2;
+
+    memset (bd_name, 0, BD_NAME_LEN);
+    memset (bda, 0, BD_ADDR_LEN);
+
+    bt_property_t *prop = (bt_property_t*) malloc (sizeof(bt_property_t));
+    tBTA_DM_SEARCH *p_search_data = (tBTA_DM_SEARCH * )malloc (sizeof (tBTA_DM_SEARCH) ) ;
+
+    DEV_CLASS dev_class = {0x20, 0x02, 0x0C};
+    memcpy(p_search_data->inq_res.dev_class , dev_class , DEV_CLASS_LEN) ;
+
+    memcpy ( &cmd , (UINT8 *)(p_msg+1) , 1);
+
+    BTIF_TRACE_ERROR("%s: cmd:%d", __FUNCTION__, cmd);
+
+    memcpy ( (char *)bd_name , (UINT8 *)(p_msg+1) + p_msg->len + offHdr, p_msg->len - offHdr);
+    BTIF_TRACE_ERROR ("btd_to_btif BDNAME: %s",   bd_name);
+
+    char * pch = NULL;
+    char dest_name[BD_NAME_LEN*3];
+    char dest_addr[BD_ADDR_LEN*3];
+    char dest_cod[DEV_CLASS_LEN*3];
+
+    pch = strtok (bd_name,"#");
+    pch = strtok (NULL, "#");
+
+
+    UINT32 cod =  (UINT32 ) strtoul(pch, (char **)&pch, 16);
+    uint2devclass( cod, dev_class);
+
+    memcpy(p_search_data->inq_res.dev_class , dev_class , DEV_CLASS_LEN) ;
+    pch = strtok (bd_name,"@");
+
+    strcpy (dest_name, pch );
+    nameLen = strlen(dest_name) ;
+
+    pch = strtok (NULL, "@");
+    strcpy (dest_addr, pch );
+
+    int ii = 0;
+    char  ps [512];
+    for(ii=5;ii>=0;ii--){
+        strncpy(ps,dest_addr+ii*2,2);
+        bda[ii] = (UINT8) strtoul(ps, (char**)ps, 16);
+    }
+
+    BTIF_TRACE_ERROR ("btd_to_btif dev_class: %02x-%02x-%02x",   dev_class[0], dev_class[1], dev_class[2]);
+
+    BTIF_TRACE_ERROR ("btd_to_btif BDNAME: %s",   bd_name);
+
+    BTIF_TRACE_ERROR ("btd_to_btif bdaA: %02x-%02x-%02x-%02x-%02x-%02x",
+            bda[0], bda[1], bda[2],
+            bda[3], bda[4], bda[5]);
+
+    if(isBTIF(cmd)){
+        switch ( getBTIF(cmd) ){
+            case INIT:
+            {
+                BTIF_TRACE_ERROR("INIT");
+                //bt_utils_init();
+                //btif_init_bluetooth();
+            }
+                break;
+            case ENABLE:
+            {
+                BTIF_TRACE_ERROR("ENABLE - enable_bluetooth");
+                //btif_enable_bluetooth();();
+                tBTA_DM_SEC_EVT event = BTA_DM_ENABLE_EVT;
+                tBTA_DM_SEC *p_data = (tBTA_DM_SEC * )malloc (sizeof (tBTA_DM_SEC) ) ; ;
+                p_data->enable.status = BTA_SUCCESS ;
+                BTM_GetLocalDeviceAddr(p_data->enable.bd_addr);
+                //bte_dm_evt(event,p_data);
+                btif_enable_bluetooth_evt(p_data->enable.status, p_data->enable.bd_addr);
+                BTIF_TRACE_ERROR("ENABLE -- DONE !");
+            }
+                break;
+            case DISABLE:
+            {
+                BTIF_TRACE_ERROR("DISABLE");
+                //btif_disable_bluetooth();
+                btif_disable_bluetooth_evt();
+                BTIF_TRACE_ERROR("DISABLE -- DONE !");
+            }
+                break;
+            case CLEANUP:
+            {
+                BTIF_TRACE_ERROR("CLEANUP");
+                btif_shutdown_bluetooth();
+                BTIF_TRACE_ERROR("CLEANUP -- DONE !");
+            }
+                break;
+            case GET_ADAPTER_PROPERTIES:
+            {
+                BTIF_TRACE_ERROR("GET_ADAPTER_PROPERTIES");
+                btif_get_adapter_properties();
+                //btif_in_get_adapter_properties();
+            }
+                break;
+            case GET_ADAPTER_PROPERTY:
+            {
+                BTIF_TRACE_ERROR("GET_ADAPTER_PROPERTY");
+            }
+                break;
+            case SET_ADAPTER_PROPERTY:
+            {
+                BTIF_TRACE_ERROR("SET_ADAPTER_PROPERTY");
+                prop->type=BT_PROPERTY_BDNAME;
+                prop->len = nameLen;
+                prop->val = bd_name ;
+                btif_set_adapter_property(prop);
+            }
+                break;
+            case GET_REMOTE_DEVICE_PROPERTIES:
+            {
+                BTIF_TRACE_ERROR("GET_REMOTE_DEVICE_PROPERTIES");
+                btif_get_remote_device_properties((bt_bdaddr_t *)bda );
+            }
+                break;
+            case GET_REMOTE_DEVICE_PROPERTY:
+            {
+                BTIF_TRACE_ERROR("GET_REMOTE_DEVICE_PROPERTY");
+            }
+                break;
+            case SET_REMOTE_DEVICE_PROPERTY:
+            {
+                BTIF_TRACE_ERROR("SET_REMOTE_DEVICE_PROPERTY");
+                prop->type=BT_PROPERTY_BDNAME;
+                prop->len = nameLen;
+                prop->val = bd_name ;
+                btif_set_remote_device_property( (bt_bdaddr_t *)bda , prop);
+            }
+                break;
+            case GET_REMOTE_SERVICE_RECORD:
+            {
+                BTIF_TRACE_ERROR("GET_REMOTE_SERVICE_RECORD");
+            }
+                break;
+            case GET_REMOTE_SERVICES:
+            {
+                BTIF_TRACE_ERROR("GET_REMOTE_SERVICES");
+                btif_dm_get_remote_services( (bt_bdaddr_t *)bda );
+            }
+                break;
+            case START_DISCOVERY:
+            {
+                BTIF_TRACE_ERROR("START_DISCOVERY");
+                btif_dm_start_discovery();
+            }
+                break;
+            case CANCEL_DISCOVERY:
+            {
+                BTIF_TRACE_ERROR("CANCEL_DISCOVERY");
+                btif_dm_cancel_discovery();
+            }
+                break;
+            case CREATE_BOND:
+            {
+                BTIF_TRACE_ERROR("CREATE_BOND");
+                btif_dm_create_bond((bt_bdaddr_t *)bda , 0) ;
+            }
+                break;
+            case REMOVE_BOND:
+            {
+                BTIF_TRACE_ERROR("REMOVE_BOND");
+                btif_dm_remove_bond((bt_bdaddr_t *)bda );
+            }
+                break;
+            case CANCEL_BOND:
+            {
+                BTIF_TRACE_ERROR("CANCEL_BOND");
+                btif_dm_cancel_bond((bt_bdaddr_t *)bda );
+            }
+                break;
+            case PIN_REPLY:
+            {
+                BTIF_TRACE_ERROR("INIT");
+            }
+                break;
+            case SSP_REPLY:
+            {
+                BTIF_TRACE_ERROR("SSP_REPLY");
+            }
+                break;
+            case GET_PROFILE_INTERFACE:
+            {
+                BTIF_TRACE_ERROR("GET_PROFILE_INTERFACE");
+            }
+                break;
+            case DUT_MODE_CONFIGURE:
+            {
+                BTIF_TRACE_ERROR("DUT_MODE_CONFIGURE");
+            }
+                break;
+            case DUT_MODE_SEND:
+            {
+                BTIF_TRACE_ERROR("DUT_MODE_SEND");
+            }
+                break;
+            case LE_TEST_MODE:
+            {
+                BTIF_TRACE_ERROR("LE_TEST_MODE");
+            }
+                break;
+            case CONFIG_HCI_SNOOP_LOG:
+            {
+                BTIF_TRACE_ERROR("CONFIG_HCI_SNOOP_LOG");
+            }
+                break;
+//... ... ...//
+            case SET_ADAPTER_PROPERTY_BDNAME:
+            {
+                BTIF_TRACE_ERROR("SET_ADAPTER_PROPERTY_BDNAME");
+                prop->type=BT_PROPERTY_BDNAME;
+                prop->len = nameLen;
+                prop->val = bd_name ;
+                btif_set_adapter_property(prop);
+            }
+                break;
+            case SET_ADAPTER_PROPERTY_SCAN_MODE_NONE:
+            {
+                BTIF_TRACE_ERROR("SET_ADAPTER_PROPERTY_SCAN_MODE_NONE");
+                prop->type=BT_PROPERTY_ADAPTER_SCAN_MODE;
+                bt_scan_mode_t mode = BT_SCAN_MODE_NONE;
+                prop->val=(void*)(&mode);
+                prop->len = sizeof(bt_scan_mode_t);
+                btif_set_adapter_property(prop);
+            }
+                break;
+            case SET_ADAPTER_PROPERTY_SCAN_MODE_CONNECTABLE:
+            {
+                BTIF_TRACE_ERROR("SET_ADAPTER_PROPERTY_SCAN_MODE_CONNECTABLE");
+                prop->type=BT_PROPERTY_ADAPTER_SCAN_MODE;
+                bt_scan_mode_t mode = BT_SCAN_MODE_CONNECTABLE;
+                prop->val=(void*)(&mode);
+                prop->len = sizeof(bt_scan_mode_t);
+                btif_set_adapter_property(prop);
+            }
+                break;
+            case SET_ADAPTER_PROPERTY_SCAN_MODE_CONNECTABLE_DISCOVERABLE:
+            {
+                BTIF_TRACE_ERROR("SET_ADAPTER_PROPERTY_SCAN_MODE_CONNECTABLE_DISCOVERABLE");
+                prop->type=BT_PROPERTY_ADAPTER_SCAN_MODE;
+                bt_scan_mode_t mode = BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE;
+                prop->val=(void*)(&mode);
+                prop->len = sizeof(bt_scan_mode_t);
+                btif_set_adapter_property(prop);
+            }
+                break;
+            case SET_ADAPTER_PROPERTY_DISCOVERY_TIMEOUT_2M:
+            {
+                BTIF_TRACE_ERROR("SET_ADAPTER_PROPERTY_DISCOVERY_TIMEOUT_2M");
+                prop->type=BT_PROPERTY_ADAPTER_DISCOVERY_TIMEOUT;
+                int mode = 120;
+                prop->val=(void*)(&mode);
+                prop->len=(int)sizeof(int);
+                btif_set_adapter_property(prop);
+            }
+                break;
+            case SET_ADAPTER_PROPERTY_DISCOVERY_TIMEOUT_5M:
+            {
+                BTIF_TRACE_ERROR("SET_ADAPTER_PROPERTY_DISCOVERY_TIMEOUT_5M");
+                prop->type=BT_PROPERTY_ADAPTER_DISCOVERY_TIMEOUT;
+                int mode = 300;
+                prop->val=(void*)(&mode);
+                prop->len=(int)sizeof(int);
+                btif_set_adapter_property(prop);
+            }
+                break;
+            case SET_ADAPTER_PROPERTY_DISCOVERY_TIMEOUT_1H:
+            {
+                BTIF_TRACE_ERROR("SET_ADAPTER_PROPERTY_DISCOVERY_TIMEOUT_1H");
+                prop->type=BT_PROPERTY_ADAPTER_DISCOVERY_TIMEOUT;
+                int mode = 3600;
+                prop->val=(void*)(&mode);
+                prop->len=(int)sizeof(int);
+                btif_set_adapter_property(prop);
+            }
+                break;
+            case SET_ADAPTER_PROPERTY_DISCOVERY_TIMEOUT_NE:
+            {
+                BTIF_TRACE_ERROR("SET_ADAPTER_PROPERTY_DISCOVERY_TIMEOUT_NE");
+                prop->type=BT_PROPERTY_ADAPTER_DISCOVERY_TIMEOUT;
+                int mode = 0;
+                prop->val=(void*)(&mode);
+                prop->len=(int)sizeof(int);
+                btif_set_adapter_property(prop);
+            }
+                break;
+            default:
+            {
+                BTIF_TRACE_ERROR("default");
+            }
+                break;
+        }
+    }else if(isBTE(cmd)){
+        switch ( getBTE(cmd) ){
+            case INQ_RES:
+            {
+                BTIF_TRACE_ERROR("INQ_RES");
+                bdcpy(p_search_data->inq_res.bd_addr, bda);
+                bte_dm_aic_evt( (tBTA_DM_SEARCH_EVT) BTA_DM_INQ_RES_EVT, p_search_data) ;
+            }
+                break;
+            case BOND_STATE:
+            {
+                BTIF_TRACE_ERROR("BOND_STATE");
+                bte_dm_aic_evt_3(bda);
+            }
+                break;
+            case DISC_RES:
+            {
+                BTIF_TRACE_ERROR("DISC_RES");
+                UINT32 num_uuids = 1;
+                bdcpy(p_search_data->disc_res.bd_addr, bda);
+                p_search_data->disc_res.p_uuid_list = (UINT8*)GKI_getbuf(num_uuids*MAX_UUID_SIZE);
+                p_search_data->disc_res.num_uuids = num_uuids;
+                p_search_data->disc_res.services |= (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(BTA_HSP_SERVICE_ID)) ;
+                p_search_data->disc_res.result = BTA_SUCCESS;
+                bte_dm_aic_evt_2( (tBTA_DM_SEARCH_EVT) BTA_DM_DISC_RES_EVT, p_search_data) ;
+            }
+                break;
+            default:
+            {
+                BTIF_TRACE_ERROR("default");
+            }
+                break;
+        }
+    }
 }
