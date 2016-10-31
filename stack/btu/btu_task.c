@@ -260,7 +260,7 @@ BTU_API UINT32 btu_task (UINT32 param)
                          BT_TRACE(TRACE_LAYER_BTU, TRACE_TYPE_API, "post event to start timer in BTU task GOOOOO BT_EVT_CONTEXT_AICSET_EVT %x" , p_msg->event);
                          p_msg->event = BT_EVT_CONTEXT_AICSET_EVT;
                          GKI_send_msg(BTIF_TASK, BTU_BTIF_MBOX, p_msg);
-                         GKI_freebuf(p_msg);
+                         //GKI_freebuf(p_msg);
                        break;
                     case BT_EVT_TO_BTU_HCI_EVT:
                         /* post event to start timer in BTU task */
