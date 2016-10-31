@@ -1663,9 +1663,9 @@ static void btd_to_btif(BT_HDR *p_msg){
     BTIF_TRACE_ERROR1 ("btd_to_btif BDNAME: %s",   bd_name);
 
     char * pch = NULL;
-    char dest_name[BD_NAME_LEN*3];
-    char dest_addr[BD_ADDR_LEN*3];
-    char dest_cod[DEV_CLASS_LEN*3];
+    char dest_name[BD_NAME_LEN*3]={0};
+    char dest_addr[BD_ADDR_LEN*3]={0};
+    char dest_cod[DEV_CLASS_LEN*3]={0};
 
     pch = strtok (bd_name,"#");
     pch = strtok (NULL, "#");
