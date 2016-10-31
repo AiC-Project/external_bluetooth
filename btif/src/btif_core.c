@@ -1686,9 +1686,9 @@ static void btd_to_btif(BT_HDR *p_msg){
     BTIF_TRACE_ERROR ("btd_to_btif BDNAME: %s",   bd_name);
 
     char * pch = NULL;
-    char dest_name[BD_NAME_LEN*3];
-    char dest_addr[BD_ADDR_LEN*3];
-    char dest_cod[DEV_CLASS_LEN*3];
+    char dest_name[BD_NAME_LEN*3]={0};
+    char dest_addr[BD_ADDR_LEN*3]={0};
+    char dest_cod[DEV_CLASS_LEN*3]={0};
 
     pch = strtok (bd_name,"#");
     pch = strtok (NULL, "#");
@@ -1715,7 +1715,7 @@ static void btd_to_btif(BT_HDR *p_msg){
 
     BTIF_TRACE_ERROR ("btd_to_btif dev_class: %02x-%02x-%02x",   dev_class[0], dev_class[1], dev_class[2]);
 
-    BTIF_TRACE_ERROR ("btd_to_btif BDNAME: %s",   bd_name);
+    BTIF_TRACE_ERROR ("btd_to_btif BDNAME: %s  %s",   bd_name, dest_addr);
 
     BTIF_TRACE_ERROR ("btd_to_btif bdaA: %02x-%02x-%02x-%02x-%02x-%02x",
             bda[0], bda[1], bda[2],
