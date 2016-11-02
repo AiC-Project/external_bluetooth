@@ -1412,9 +1412,9 @@ static void btif_dm_search_services_evt(UINT16 event, char *p_param)
             /* onUuidChanged requires getBondedDevices to be populated.
             ** bond_state_changed needs to be sent prior to remote_device_property
             */
-            if ((pairing_cb.state == BT_BOND_STATE_BONDING) &&
+            /*if ((pairing_cb.state == BT_BOND_STATE_BONDING) &&
                 (bdcmp(p_data->disc_res.bd_addr, pairing_cb.bd_addr) == 0)&&
-                pairing_cb.sdp_attempts > 0)
+                pairing_cb.sdp_attempts > 0)*/
             {
                  BTIF_TRACE_DEBUG("%s Remote Service SDP done. Call bond_state_changed_cb BONDED",
                                    __FUNCTION__);
